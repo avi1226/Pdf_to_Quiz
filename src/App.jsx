@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // ═══════════════════════════════════════════════
-// CSS &const STYLES = `
+// CSS & THEME
+// ═══════════════════════════════════════════════
+const STYLES = `
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;700;900&display=swap');
 
 :root {
@@ -28,6 +30,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
   --radius-md:        0px;
   --radius-lg:        0px;
   --shadow-md:        4px 4px 0px #000000;
+  --shadow-sm:        2px 2px 0px #000000;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,26 +41,33 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 h1, h2, h3 { font-family: 'Inter', sans-serif; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; }
 
-.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.container { width: 100%; max-width: 900px; margin: 0 auto; padding: 0 1rem; }
 .card { 
   background: var(--bg-card); 
   border: 2px solid var(--border); 
-  padding: 3rem; 
+  padding: 2rem; 
   box-shadow: var(--shadow-md);
   margin-bottom: 2rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .card { padding: 3rem; }
 }
 
 .btn { 
-  height: 54px; border: 2px solid var(--border); border-radius: 0; 
-  padding: 0 2rem; font-weight: 900; cursor: pointer; transition: all 0.1s; 
+  height: auto; min-height: 54px; border: 2px solid var(--border); border-radius: 0; 
+  padding: 0.75rem 1.5rem; font-weight: 900; cursor: pointer; transition: all 0.1s; 
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; 
   background: #FFFFFF; color: #000000; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 0.9rem;
 }
-.btn:hover:not(:disabled) { background: #000000; color: #FFFFFF; transform: translate(-2px, -2px); box-shadow: 4px 4px 0px #000000; }
+.btn:hover:not(:disabled) { background: #000000; color: #FFFFFF; transform: translate(-2px, -2px); box-shadow: var(--shadow-md); }
 .btn:active:not(:disabled) { transform: translate(0, 0); box-shadow: none; }
 .btn-primary { background: #000000; color: #FFFFFF; }
 .btn-primary:hover:not(:disabled) { background: #333333; }
@@ -67,32 +77,31 @@ input[type="text"], input[type="password"], input[type="range"] {
   background: #FFFFFF; color: #000000; font-weight: 700;
 }
 
-.upload-zone { border: 2px dashed #000000 !important; border-radius: 0 !important; }
+.upload-zone { border: 2px dashed #000000 !important; border-radius: 0 !important; width: 100%; }
 .upload-zone:hover { background: #F0F0F0 !important; }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-@media (max-width: 639px) { .grid-2 { grid-template-columns: 1fr; } }
-`;float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 639px) { 
+  .grid-2 { grid-template-columns: 1fr; }
+  h1 { font-size: 2rem !important; }
+}
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(0,0,0,0.2); } 50% { box-shadow: 0 0 0 8px rgba(0,0,0,0); } }
 
 .shake { animation: shake 0.4s ease; }
-.fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .float { animation: float 4s ease-in-out infinite; }
 
 /* Grid Layouts */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .diagram-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2rem; }
 
 @media (max-width: 639px) {
   .grid-2, .grid-3, .diagram-layout { grid-template-columns: 1fr; }
-  .card { padding: 1.5rem; border-radius: var(--radius-md); }
+  .card { padding: 1.5rem; }
   .btn, .input { width: 100%; }
 }
 `;
@@ -355,9 +364,6 @@ export default function StudyMap() {
 
   const [screen, setScreen] = useState('upload'); // 'upload' | 'loading' | 'quiz' | 'results'
   
-  // RESTORED API KEY LOGIC
-  
-  const [pdfjsReady, setPdfjsReady] = useState(false);
 
   const [uploadedFile, setUploadedFile] = useState(null);
   const [pdfText, setPdfText] = useState('');
@@ -381,6 +387,9 @@ export default function StudyMap() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState(null);
 
+  const [pdfjsReady, setPdfjsReady] = useState(false);
+  const [jszipReady, setJszipReady] = useState(false);
+
   useEffect(() => {
     // Load PDF.js
     const pdfScript = document.createElement('script');
@@ -394,6 +403,7 @@ export default function StudyMap() {
     // Load JSZip
     const zipScript = document.createElement('script');
     zipScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    zipScript.onload = () => setJszipReady(true);
     document.head.appendChild(zipScript);
   }, []);
 
@@ -426,8 +436,8 @@ export default function StudyMap() {
 
       {screen === 'upload' && (
         <UploadScreen
-          
           pdfjsReady={pdfjsReady}
+          jszipReady={jszipReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
@@ -458,10 +468,10 @@ export default function StudyMap() {
 
       {screen === 'loading' && (
         <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="text-center card float" style={{ padding: '3rem', minWidth: '300px' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 0, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 1s ease-in-out infinite', margin: '0 auto 1.5rem', boxShadow: 'none' }} />
-            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem' }} className="fade-in">{loadingMessage}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Processing Locally</div>
+          <div className="text-center card" style={{ padding: '4rem', minWidth: '300px' }}>
+            <div style={{ width: 64, height: 64, border: '6px solid #000', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite', margin: '0 auto 2rem' }} />
+            <div style={{ fontWeight: 900, fontSize: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{loadingMessage}</div>
+            <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '1rem', textTransform: 'uppercase', opacity: 0.7 }}>Analyzing document offline...</div>
           </div>
         </div>
       )}
@@ -506,7 +516,7 @@ export default function StudyMap() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -515,14 +525,22 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
     const ext = file.name.split('.').pop().toLowerCase();
     if (ext !== 'pdf' && ext !== 'pptx') { showError('wrong_file', 'Please upload a PDF or PPTX file.'); return; }
     if (file.size > 20 * 1024 * 1024) { showError('file_too_large', 'File too large. Use a file under 20MB.'); return; }
+    if (ext === 'pdf' && !pdfjsReady) { showError('loading', 'PDF engine still loading...'); return; }
+    if (ext === 'pptx' && !jszipReady) { showError('loading', 'PowerPoint engine still loading...'); return; }
     
     setUploadedFile(file);
     try {
       const result = ext === 'pdf' ? await extractPdfText(file) : await extractPptxText(file);
+      if (!result.text || result.text.trim().length < 50) {
+        showError('no_text', 'Could not extract enough text from this file. It might be scanned or protected.');
+        setUploadedFile(null);
+        return;
+      }
       setPdfText(result.text);
       setPdfMeta({ pageCount: result.pageCount, wordCount: result.wordCount });
     } catch (err) {
       showError('extract_error', 'Could not read file: ' + err.message);
+      setUploadedFile(null);
     }
   };
 
@@ -535,85 +553,83 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
   };
 
   return (
-    <div className="container" style={{ padding: '4rem 1rem' }}>
-      <div className="card fade-in-up" style={{ maxWidth: 700, margin: '0 auto' }}>
-        <div className="text-center mb-8">
-          <h1 style={{ fontSize: 42 }}>StudyMap AI</h1>
-          <p style={{ fontWeight: 700 }}>BRUTALIST EDITION — NO API KEY REQUIRED</p>
+    <div className="container" style={{ padding: '2rem 1rem' }}>
+      <div className="card fade-in-up" style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div className="text-center mb-10">
+          <h1 style={{ fontSize: 48, letterSpacing: '-0.04em' }}>StudyMap AI</h1>
         </div>
 
         {!uploadedFile ? (
           <div className="mb-4">
             <div className="upload-zone"
-              style={{ border: `2px dashed ${isDragOver ? 'var(--primary)' : 'var(--border)'}`, background: isDragOver ? 'var(--primary-light)' : 'var(--bg-surface)', minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s ease' }}
+              style={{ border: `4px dashed #000`, padding: '3rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s ease' }}
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
               onClick={() => fileInputRef.current?.click()}
             >
               <input type="file" accept=".pdf,.pptx" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
-              <p style={{ fontWeight: 900 }}>UPLOAD PDF OR PPTX</p>
-              <p style={{ fontSize: 13, marginTop: 4 }}>MAX 20MB</p>
+              <div style={{ fontSize: 64, marginBottom: 16 }}>📁</div>
+              <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF OR PPTX</p>
+              <p style={{ fontSize: 14, marginTop: 8, opacity: 0.6 }}>DRAG & DROP OR CLICK TO BROWSE</p>
             </div>
           </div>
         ) : (
-          <div className="fade-in-up mb-8">
-            <div className="flex items-center gap-4 mb-6" style={{ background: '#000', padding: '20px', border: '2px solid #000', color: '#fff' }}>
-              <div style={{ fontSize: 24 }}>✓</div>
-              <div>
-                <div style={{ fontWeight: 900, textTransform: 'uppercase' }}>{uploadedFile.name}</div>
-                <div style={{ fontSize: 13 }}>{pdfMeta.pageCount} SLIDES/PAGES · {pdfMeta.wordCount} WORDS</div>
-              </div>
+          <div className="fade-in-up">
+            <div style={{ background: '#000', padding: '24px', border: '2px solid #000', color: '#fff', marginBottom: '2rem', textAlign: 'center' }}>
+              <div style={{ fontWeight: 900, fontSize: 18, textTransform: 'uppercase', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
+              <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>{pdfMeta.pageCount} SLIDES/PAGES · {pdfMeta.wordCount} WORDS EXTRACTED</div>
             </div>
 
-            <div className="grid-2 mb-6">
-              <div>
-                <label>Questions: <span style={{ color: 'var(--primary)' }}>{config.questionCount}</span></label>
-                <input type="range" min={5} max={30} step={1} value={config.questionCount} onChange={e => setConfig({ ...config, questionCount: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--primary)', height: 6 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
+              <div className="grid-2">
+                <div>
+                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>QUESTIONS: {config.questionCount}</label>
+                  <input type="range" min={5} max={30} step={1} value={config.questionCount} onChange={e => setConfig({ ...config, questionCount: Number(e.target.value) })} style={{ height: 10, cursor: 'pointer' }} />
+                </div>
+                <div>
+                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>DIFFICULTY</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '2px solid #000', background: '#000', gap: 2 }}>
+                    {['easy', 'medium', 'hard'].map(lvl => (
+                      <button key={lvl} style={{ border: 'none', padding: '10px 0', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', background: config.difficulty === lvl ? '#000' : '#FFF', color: config.difficulty === lvl ? '#FFF' : '#000' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
               <div>
-                <label>Difficulty</label>
-                <div className="flex" style={{ background: 'var(--bg-surface)', padding: 4, borderRadius: 0, border: '1px solid var(--border)' }}>
-                  {['easy', 'medium', 'hard'].map(lvl => (
-                    <button key={lvl} className={config.difficulty === lvl ? 'btn-primary' : ''} style={{ flex: 1, borderRadius: 0, border: 'none', height: 32, fontSize: 13, textTransform: 'capitalize', background: config.difficulty === lvl ? 'var(--primary)' : 'transparent', color: config.difficulty === lvl ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
-                      {lvl}
-                    </button>
-                  ))}
+                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>SESSION MODE</label>
+                <div className="grid-2" style={{ gap: 12 }}>
+                  <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 EXAM</button>
+                  <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 INTERVIEW</button>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>QUESTION TYPES</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {[
+                    { id: 'mcq', label: 'MCQ' },
+                    { id: 'true_false', label: 'T/F' },
+                    { id: 'fill_blank', label: 'FILL' },
+                    { id: 'short_answer', label: 'SHORT' },
+                    { id: 'diagram', label: 'DIAGRAM' }
+                  ].map(t => {
+                    const active = config.types.includes(t.id);
+                    return (
+                      <button key={t.id} onClick={() => toggleType(t.id)} style={{ flex: '1 1 auto', padding: '10px 12px', border: '2px solid #000', background: active ? '#000' : '#FFF', color: active ? '#FFF' : '#000', fontSize: 11, fontWeight: 900, cursor: 'pointer', transition: 'all 0.1s' }}>
+                        {active ? '✓ ' : ''}{t.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
 
-            <div className="mb-6">
-              <label>Mode</label>
-              <div className="flex gap-2">
-                <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 Exam Mode</button>
-                <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 Interview Mode</button>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <label>Question Types</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {[
-                  { id: 'mcq', label: 'Multiple Choice' },
-                  { id: 'true_false', label: 'True / False' },
-                  { id: 'fill_blank', label: 'Fill in the Blank' },
-                  { id: 'short_answer', label: 'Short Answer' },
-                  { id: 'diagram', label: 'Diagrams & Flowcharts' }
-                ].map(t => {
-                  const active = config.types.includes(t.id);
-                  return (
-                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '8px 16px', borderRadius: 0, border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--primary-light)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: active ? 'var(--shadow-glow)' : 'none' }}>
-                      {active ? '✓ ' : ''}{t.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <button className="btn btn-primary w-full" style={{ height: 56, fontSize: 16, fontWeight: 700 }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
-              Generate Study Session ⚡
+            <button className="btn btn-primary w-full" style={{ height: 64, fontSize: 18, border: '4px solid #000' }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
+              START SESSION ⚡
             </button>
           </div>
         )}
