@@ -4,47 +4,74 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // CSS & THEME
 // ═══════════════════════════════════════════════
 const STYLES = `
+
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg-page:        #F8FAFC;
-  --bg-card:        #FFFFFF;
-  --bg-surface:     #F1F5F9;
-  --border:         #E2E8F0;
+  /* ── BACKGROUNDS ── */
+  --bg-page:          #0A0A0A;
+  --bg-card:          #111111;
+  --bg-surface:       #1A1A1A;
+  --bg-elevated:      #222222;
+  --bg-overlay:       #2A2A2A;
 
-  --primary:        #2563EB;
-  --primary-dark:   #1E3A5F;
-  --accent:         #38BDF8;
+  /* ── BORDERS ── */
+  --border-subtle:    #1F1F1F;
+  --border:           #2E2E2E;
+  --border-strong:    #444444;
+  --border-white:     #FFFFFF1A;
 
-  --correct:        #22C55E;
-  --wrong:          #EF4444;
-  --partial:        #F59E0B;
+  /* ── TEXT ── */
+  --text-primary:     #F5F5F5;
+  --text-secondary:   #A3A3A3;
+  --text-hint:        #525252;
+  --text-inverse:     #0A0A0A;
 
-  --text-primary:   #0F172A;
-  --text-secondary: #475569;
-  --text-hint:      #94A3B8;
+  /* ── PRIMARY ACCENT — PURE WHITE ── */
+  --primary:          #FFFFFF;
+  --primary-hover:    #E5E5E5;
+  --primary-muted:    #D4D4D4;
 
-  --correct-bg:     #F0FDF4;
-  --wrong-bg:       #FEF2F2;
-  --warning-bg:     #FEF3C7;
+  /* ── SEMANTIC — MONOCHROME VERSIONS ── */
+  --correct:          #E5E5E5;
+  --correct-bg:       #1C1C1C;
+  --correct-border:   #525252;
 
-  --drag-idle:      #EFF6FF;
-  --drag-hover:     #DBEAFE;
-  --drag-border:    #93C5FD;
-  --drag-correct:   #DCFCE7;
-  --drag-wrong:     #FEE2E2;
-  --drop-empty:     #F8FAFC;
-  --drop-active:    #DBEAFE;
-  --drop-filled:    #F0F9FF;
+  --wrong:            #6B6B6B;
+  --wrong-bg:         #161616;
+  --wrong-border:     #3A3A3A;
 
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
-  --shadow-drag: 0 8px 24px rgba(37,99,235,0.18);
+  --partial:          #999999;
+  --partial-bg:       #1A1A1A;
+  --partial-border:   #444444;
+
+  /* ── DRAG AND DROP ── */
+  --drag-idle:        #1A1A1A;
+  --drag-hover:       #242424;
+  --drag-border:      #3D3D3D;
+  --drag-border-active: #888888;
+  --drag-correct:     #1C1C1C;
+  --drag-wrong:       #161616;
+
+  --drop-empty:       #111111;
+  --drop-active:      #1E1E1E;
+  --drop-filled:      #1A1A1A;
+  --drop-dashed:      #3D3D3D;
+
+  /* ── SHADOWS ── */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.6);
+  --shadow-md:   0 4px 20px rgba(0,0,0,0.7);
+  --shadow-drag: 0 8px 32px rgba(0,0,0,0.8);
+  --shadow-glow: 0 0 0 1px rgba(255,255,255,0.08);
+
+  /* ── RADIUS ── */
   --radius-sm:   8px;
   --radius-md:   12px;
   --radius-lg:   16px;
+  --radius-pill: 999px;
 }
 
+/* ── GLOBAL RESET ── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -53,14 +80,27 @@ body {
   color: var(--text-primary);
   font-size: clamp(14px, 2vw, 16px);
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 { font-weight: 600; color: var(--primary-dark); }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--partial); }
+
+/* ── FOCUS RING ── */
+:focus-visible { outline: 1.5px solid var(--primary); outline-offset: 3px; }
+
+/* ── SELECTION ── */
+::selection { background: var(--bg-elevated); color: var(--text-primary); }
+
+h1, h2, h3, h4, h5, h6 { font-weight: 600; color: var(--primary); }
 p { font-weight: 400; color: var(--text-primary); }
 .mono { font-family: 'JetBrains Mono', monospace; }
 
 .container { max-width: 760px; margin: 0 auto; padding: 0 1rem; }
-.card { background: var(--bg-card); box-shadow: var(--shadow-md); border-radius: var(--radius-lg); padding: 2rem; }
+.card { background: var(--bg-card); box-shadow: var(--shadow-md); border-radius: var(--radius-lg); padding: 2rem; border: 1px solid var(--border-subtle); }
 
 .text-center { text-align: center; }
 .text-right { text-align: right; }
@@ -70,20 +110,19 @@ p { font-weight: 400; color: var(--text-primary); }
 .w-full { width: 100%; }
 
 button, input, select, textarea { font-family: inherit; font-size: inherit; }
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* Buttons */
 .btn { height: 48px; border: none; border-radius: var(--radius-md); padding: 0 1.25rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--bg-surface); color: var(--text-primary); }
-.btn:hover:not(:disabled) { filter: brightness(0.95); }
+.btn:hover:not(:disabled) { background: var(--bg-elevated); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+.btn-primary { background: var(--primary); color: var(--text-inverse); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
-.btn-outline.active { background: var(--primary); color: white; border-color: var(--primary); }
+.btn-outline.active { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
 
 /* Inputs */
-input[type="text"], input[type="password"], textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; min-height: 44px; transition: all 0.2s ease; }
-input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+input[type="text"], input[type="password"], textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); min-height: 44px; transition: all 0.2s ease; }
+input:focus, textarea:focus { outline: none; border-color: var(--border-strong); box-shadow: var(--shadow-glow); }
 textarea { resize: vertical; min-height: 100px; }
 label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-secondary); }
 
@@ -93,7 +132,7 @@ label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--te
 @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes correctFlash { 0% { background-color: var(--correct); } 100% { background-color: var(--correct-bg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.3); } 50% { box-shadow: 0 0 0 5px rgba(37,99,235,0); } }
+@keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 0 4px rgba(255,255,255,0.05); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .shake { animation: shake 0.4s ease; }
@@ -113,6 +152,7 @@ label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--te
   .card { padding: 1rem; }
   .btn, .input { width: 100%; }
 }
+
 `;
 
 // ═══════════════════════════════════════════════
@@ -433,7 +473,7 @@ export default function StudyMap() {
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
       {error && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '1rem' }} className="fade-in-up">
-          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '1px solid var(--wrong)', color: '#991B1B', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '1px solid var(--wrong)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span><span style={{ fontWeight: 600 }}>✗</span> {error.message}</span>
             <button onClick={() => setError(null)} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 600 }}>✕</button>
           </div>
@@ -568,7 +608,7 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
     <div className="container" style={{ padding: '4rem 1rem' }}>
       <div className="card" style={{ maxWidth: 600, margin: '0 auto' }}>
         <div className="text-center mb-8">
-          <h1 style={{ fontSize: 28, color: 'var(--primary-dark)' }}>StudyMap</h1>
+          <h1 style={{ fontSize: 28, color: 'var(--primary)' }}>StudyMap</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Turn your PDFs into exam-ready practice</p>
         </div>
 
@@ -636,7 +676,7 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
                 ].map(t => {
                   const active = config.types.includes(t.id);
                   return (
-                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--drag-idle)' : 'var(--bg-surface)', color: active ? 'var(--primary-dark)' : 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--drag-idle)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease' }}>
                       {t.label}
                     </button>
                   )
@@ -701,7 +741,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
     <div>
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '0.75rem 0' }}>
         <div className="container flex justify-between items-center">
-          <div style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>StudyMap</div>
+          <div style={{ fontWeight: 600, color: 'var(--primary)' }}>StudyMap</div>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Question {currentIndex + 1} of {questions.length}</div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <div style={{ fontSize: 14 }}>
@@ -723,8 +763,8 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
       <div className="container" style={{ padding: '2rem 1rem' }}>
         <div className="card slide-in-right" key={q.id} style={{ maxWidth: 680, margin: '0 auto' }}>
           <div className="flex justify-between items-center mb-4">
-            <span style={{ background: 'var(--primary-dark)', color: 'white', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{q.topic_tag}</span>
-            <span style={{ background: q.difficulty === 'easy' ? '#F0FDF4' : q.difficulty === 'medium' ? '#FEF3C7' : '#FEF2F2', color: q.difficulty === 'easy' ? '#166534' : q.difficulty === 'medium' ? '#92400E' : '#991B1B', borderRadius: 20, padding: '4px 12px', fontSize: 12 }}>{q.difficulty}</span>
+            <span style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{q.topic_tag}</span>
+            <span style={{ background: q.difficulty === 'easy' ? 'var(--correct-bg)' : q.difficulty === 'medium' ? 'var(--partial-bg)' : 'var(--wrong-bg)', color: q.difficulty === 'easy' ? 'var(--text-primary)' : q.difficulty === 'medium' ? 'var(--text-primary)' : 'var(--text-primary)', borderRadius: 20, padding: '4px 12px', fontSize: 12 }}>{q.difficulty}</span>
           </div>
 
           <div style={{ color: 'var(--text-hint)', fontSize: 13, marginBottom: 8 }}>Q{currentIndex + 1}</div>
@@ -800,7 +840,7 @@ function MCQQuestion({ question, submitted, answer, onAnswer }) {
             style.opacity = 0.5;
           }
         } else {
-          if (selected === opt) { style.borderColor = 'var(--primary)'; style.background = 'var(--drag-idle)'; style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)'; }
+          if (selected === opt) { style.borderColor = 'var(--primary)'; style.background = 'var(--drag-idle)'; style.boxShadow = '0 0 0 3px rgba(255,255,255,0.1)'; }
         }
         return (
           <div key={opt} style={style} onClick={() => handleClick(opt)} onMouseEnter={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--primary)'; e.currentTarget.style.background='var(--drag-idle)'; } }} onMouseLeave={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg-surface)'; } }}>
@@ -911,7 +951,7 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
             </div>
             <details style={{ marginTop: '1rem', cursor: 'pointer' }}>
               <summary style={{ fontWeight: 600, color: 'var(--primary)' }}>Show Model Answer</summary>
-              <p style={{ marginTop: 8, padding: '1rem', background: '#F8FAFC', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--text-secondary)' }}>{question.model_answer}</p>
+              <p style={{ marginTop: 8, padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--text-secondary)' }}>{question.model_answer}</p>
             </details>
           </div>
         )
@@ -1023,7 +1063,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
           <div style={{ fontSize: 13, color: allFilled ? 'var(--correct)' : 'var(--text-secondary)' }}>{placed} of {total} labels placed</div>
           
           {isMobile && !submitted && (
-            <div style={{ background: 'var(--warning-bg)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: '#92400E', marginBottom: 12, marginTop: 8 }}>
+            <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-primary)', marginBottom: 12, marginTop: 8 }}>
               Tap a label → tap where it belongs
             </div>
           )}
@@ -1034,10 +1074,10 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               const isSelected = chip.id === selectedChipId;
               const isDragging = dragState.draggingChipId === chip.id;
               
-              let style = { padding: '8px 16px', borderRadius: 20, border: '1.5px solid var(--drag-border)', background: 'var(--drag-idle)', color: 'var(--primary-dark)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.15s ease', boxShadow: 'var(--shadow-sm)', opacity: 1 };
+              let style = { padding: '8px 16px', borderRadius: 20, border: '1.5px solid var(--drag-border)', background: 'var(--drag-idle)', color: 'var(--primary)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.15s ease', boxShadow: 'var(--shadow-sm)', opacity: 1 };
               
               if (isUsed) { style.background = 'var(--bg-surface)'; style.borderColor = 'var(--border)'; style.color = 'var(--text-hint)'; style.opacity = 0.55; style.pointerEvents = 'none'; }
-              else if (isSelected) { style.borderColor = 'var(--accent)'; style.background = '#EFF6FF'; style.boxShadow = '0 0 0 3px rgba(56,189,248,0.25)'; }
+              else if (isSelected) { style.borderColor = 'var(--primary-hover)'; style.background = '#EFF6FF'; style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; }
               else if (isDragging) { style.opacity = 0.4; style.cursor = 'grabbing'; }
               
               return (
@@ -1074,12 +1114,12 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                 if (dragState.overZoneId === activeZone.id) {
                   style.border = '2px solid var(--primary)'; style.background = 'var(--drop-active)'; style.animation = 'pulse-border 1s infinite';
                 } else if (filledChip && !submitted) {
-                  style.border = '2px solid var(--drag-border)'; style.background = 'var(--drop-filled)'; style.color = 'var(--primary-dark)'; style.fontFamily = "'JetBrains Mono', monospace"; style.fontSize = 13;
+                  style.border = '2px solid var(--drag-border)'; style.background = 'var(--drop-filled)'; style.color = 'var(--primary)'; style.fontFamily = "'JetBrains Mono', monospace"; style.fontSize = 13;
                   content = filledChip.label;
                 } else if (submitted && zr) {
                   style.fontFamily = "'JetBrains Mono', monospace"; style.fontSize = 13; style.borderStyle = 'solid';
-                  if (zr.isCorrect) { style.borderColor = 'var(--correct)'; style.background = 'var(--drag-correct)'; style.color = '#166534'; content = `✓ ${zr.placedLabel}`; }
-                  else { style.borderColor = 'var(--wrong)'; style.background = 'var(--drag-wrong)'; style.color = '#991B1B'; content = `✗ ${zr.placedLabel || 'Empty'}`; }
+                  if (zr.isCorrect) { style.borderColor = 'var(--correct)'; style.background = 'var(--drag-correct)'; style.color = 'var(--text-primary)'; content = `✓ ${zr.placedLabel}`; }
+                  else { style.borderColor = 'var(--wrong)'; style.background = 'var(--drag-wrong)'; style.color = 'var(--text-primary)'; content = `✗ ${zr.placedLabel || 'Empty'}`; }
                 }
 
                 DropZoneCmp = (
@@ -1090,7 +1130,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                     onClick={() => { if(!submitted && isMobile) handleZoneTap(activeZone.id); }}
                   >
                     {content}
-                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: '50%', background: 'var(--wrong)', color: 'white', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
+                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: '50%', background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
                     {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 2, fontWeight: 600 }}>{zr.correctLabel}</div>}
                   </div>
                 );
@@ -1099,11 +1139,11 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               return (
                 <React.Fragment key={node.id}>
                   {node.type === 'start' || node.type === 'end' ? (
-                    <div style={{ background: 'var(--primary)', color: 'white', borderRadius: 50, padding: '8px 20px', fontSize: 13, fontWeight: 500 }}>
+                    <div style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 50, padding: '8px 20px', fontSize: 13, fontWeight: 500 }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   ) : node.type === 'decision' ? (
-                    <div style={{ width: 110, height: 110, transform: 'rotate(45deg)', background: 'var(--warning-bg)', border: '1.5px solid var(--partial)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 110, height: 110, transform: 'rotate(45deg)', background: 'var(--bg-surface)', border: '1.5px solid var(--partial)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <div style={{ transform: 'rotate(-45deg)', padding: 8, fontSize: 12, textAlign: 'center' }}>
                         {DropZoneCmp || node.display_text}
                       </div>
@@ -1197,7 +1237,7 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
             <circle cx="80" cy="80" r="65" stroke="var(--border)" strokeWidth="12" fill="none" />
             <circle cx="80" cy="80" r="65" stroke="var(--primary)" strokeWidth="12" fill="none" strokeDasharray="408" strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1.2s ease', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} strokeLinecap="round" />
           </svg>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 600, color: 'var(--primary-dark)' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 600, color: 'var(--primary)' }}>
             {scorePct}%
           </div>
         </div>
@@ -1217,9 +1257,9 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: '2rem' }} className="fade-in-up" style={{ animationDelay: '0.1s' }}>
         {Object.entries(topics).map(([topic, data], idx) => {
           const pct = Math.round((data.correct / data.total) * 100);
-          const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--warning-bg)' : 'var(--wrong-bg)';
+          const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--bg-surface)' : 'var(--wrong-bg)';
           const border = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
-          const color = pct >= 80 ? '#166534' : pct >= 50 ? '#92400E' : '#991B1B';
+          const color = pct >= 80 ? 'var(--text-primary)' : pct >= 50 ? 'var(--text-primary)' : 'var(--text-primary)';
           return (
             <div key={topic} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: `1.5px solid ${border}`, background: bg, color: color, transition: 'all 0.2s ease' }} className="fade-in-up" style={{ animationDelay: `${0.1 + (idx * 0.08)}s` }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{topic}</div>
@@ -1291,7 +1331,7 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{studyPlan.summary}</p>
             {studyPlan.study_priority?.map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: i < studyPlan.study_priority.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
                 <div>
                   <div style={{ fontWeight: 600 }}>{item.topic}</div>
                   <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{item.reason}</div>
