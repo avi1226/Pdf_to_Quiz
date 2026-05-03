@@ -321,6 +321,71 @@ Return JSON:
 // MAIN APP COMPONENT
 // ═══════════════════════════════════════════════
 
+
+const generateLocalQuestions = (text, count) => {
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  const filtered = sentences
+    .map(s => s.trim())
+    .filter(s => s.split(' ').length > 8 && s.length < 250);
+  
+  const shuffled = shuffle(filtered).slice(0, count);
+  
+  return {
+    quiz_title: "Quick Study Guide",
+    topics_covered: ["Document Content"],
+    questions: shuffled.map((s, i) => {
+      const type = i % 2 === 0 ? 'fill_blank' : 'mcq';
+      const words = s.replace(/[.!?(),;:]/g, '').split(/\s+/);
+      const candidates = words.filter(w => w.length > 5);
+      const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : words[0];
+
+      if (type === 'fill_blank') {
+        return {
+          id: `q-${i}`,
+          type: 'fill_blank',
+          topic_tag: 'Key Concepts',
+          difficulty: 'medium',
+          page_ref: 'Contextual',
+          question: 'Identify the missing key term:',
+          sentence: s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___'),
+          correct_answer: target,
+          explanation: `Full context: "${s}"`
+        };
+      } else {
+        const decoys = shuffle(words.filter(w => w.length > 5 && w.toLowerCase() !== target.toLowerCase())).slice(0, 3);
+        while (decoys.length < 3) decoys.push(["Knowledge", "Concept", "Information", "Analysis"][decoys.length]);
+        
+        return {
+          id: `q-${i}`,
+          type: 'mcq',
+          topic_tag: 'Fact Check',
+          difficulty: 'medium',
+          page_ref: 'Contextual',
+          question: `Which word is missing: "${s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___')}"?`,
+          options: shuffle([target, ...decoys]),
+          correct_answer: target,
+          explanation: `Based on the sentence: "${s}"`
+        };
+      }
+    })
+  };
+};
+
+const generateLocalStudyPlan = (questions, answers) => {
+  const scorePct = Math.round((Object.values(answers).filter(a => a.isCorrect).length / questions.length) * 100);
+  return {
+    summary: `You scored ${scorePct}% on this session. Reviewing the source material will help reinforce these key concepts.`,
+    study_priority: [
+      {
+        topic: "Core Content",
+        score_pct: scorePct,
+        reason: "Based on your quiz performance.",
+        action: "Re-read the sections related to the questions you missed."
+      }
+    ]
+  };
+};
+
 export default function StudyMap() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   useEffect(() => {
@@ -332,8 +397,7 @@ export default function StudyMap() {
   const [screen, setScreen] = useState('upload'); // 'upload' | 'loading' | 'quiz' | 'results'
   
   // RESTORED API KEY LOGIC
-  const [apiKey, setApiKey] = useState('');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  
   const [pdfjsReady, setPdfjsReady] = useState(false);
 
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -429,8 +493,7 @@ export default function StudyMap() {
 
       {screen === 'upload' && (
         <UploadScreen
-          apiKey={apiKey} setApiKey={setApiKey}
-          apiKeyVisible={apiKeyVisible} setApiKeyVisible={setApiKeyVisible}
+          
           pdfjsReady={pdfjsReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
@@ -440,34 +503,24 @@ export default function StudyMap() {
           onGenerate={async () => {
             setScreen('loading');
             setError(null);
-            const messagesList = ["Reading your document...", "Identifying key concepts...", "Detecting diagrams and flowcharts...", "Building your questions...", "Almost ready..."];
-            let msgIndex = 0;
-            setLoadingMessage(messagesList[0]);
-            const interval = setInterval(() => {
-              msgIndex = (msgIndex + 1) % messagesList.length;
-              setLoadingMessage(messagesList[msgIndex]);
+            setLoadingMessage("Analyzing document...");
+            
+            setTimeout(() => {
+              try {
+                const parsed = generateLocalQuestions(pdfText, config.questionCount);
+                setQuestions(parsed.questions);
+                setQuizTitle(parsed.quiz_title);
+                setStartTime(Date.now());
+                setCurrentIndex(0);
+                setAnswers({});
+                setSubmitted({});
+                setScreen('quiz');
+              } catch (err) {
+                showError('local_error', 'Could not process PDF: ' + err.message);
+                setScreen('upload');
+              }
             }, 2000);
-
-            try {
-              const raw = await callAnthropic([{ role: 'user', content: buildQuizPrompt(pdfText, config) }], SYSTEM_PROMPT);
-              const parsed = parseJSON(raw);
-              setQuestions(parsed.questions);
-              setQuizTitle(parsed.quiz_title || "Generated Quiz");
-              setStartTime(Date.now());
-              setCurrentIndex(0);
-              setAnswers({});
-              setSubmitted({});
-              setScreen('quiz');
-            } catch (err) {
-              let code = 'api_error';
-              if (err.message.includes('JSON')) code = 'parse_error';
-              showError(code, 'Could not generate questions: ' + err.message);
-              setScreen('upload');
-            } finally {
-              clearInterval(interval);
-            }
-          }}
-        />
+          }} />
       )}
 
       {screen === 'loading' && (
@@ -495,15 +548,10 @@ export default function StudyMap() {
           showError={showError}
           onComplete={async () => {
             setScreen('results');
-            try {
-              const raw = await callAnthropic([{ role: 'user', content: buildStudyPlanPrompt(questions, answers) }], STUDY_PLAN_SYSTEM_PROMPT);
-              setStudyPlan(parseJSON(raw));
-            } catch (err) {
-              console.error(err);
-              showError('study_plan_error', 'Could not generate study recommendations.');
-            }
-          }}
-        />
+            setTimeout(() => {
+              setStudyPlan(generateLocalStudyPlan(questions, answers));
+            }, 1000);
+          }} />
       )}
 
       {screen === 'results' && (
@@ -527,7 +575,7 @@ export default function StudyMap() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -560,19 +608,6 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
         <div className="text-center mb-8">
           <h1 style={{ fontSize: 32, marginBottom: '0.5rem' }} className="text-gradient">StudyMap AI</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Transform documents into intelligent, interactive practice sessions.</p>
-        </div>
-
-        {/* RESTORED API KEY FIELD */}
-        <div className="mb-4">
-          <label htmlFor="apiKeyInput">Anthropic API Key</label>
-          <div style={{ position: 'relative' }}>
-            <input id="apiKeyInput" type={apiKeyVisible ? 'text' : 'password'} placeholder="sk-ant-..." value={apiKey} onChange={e => setApiKey(e.target.value)} />
-            <button aria-label="Toggle API Key visibility" style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }} onClick={() => setApiKeyVisible(!apiKeyVisible)}>
-              {apiKeyVisible ? '🙈' : '👁️'}
-            </button>
-            {apiKey.startsWith('sk-ant-') && <span style={{ position: 'absolute', right: 40, top: 12, background: 'var(--correct-bg)', color: 'var(--correct)', padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>✓ Valid format</span>}
-          </div>
-          <p style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 4 }}>Stored locally in your browser. Requires a Claude 3.5 Sonnet capable key.</p>
         </div>
 
         {!uploadedFile ? (
@@ -645,7 +680,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
               </div>
             </div>
 
-            <button className="btn btn-primary w-full" style={{ height: 56, fontSize: 16, fontWeight: 700 }} disabled={!pdfText || !apiKey || config.types.length === 0} onClick={onGenerate}>
+            <button className="btn btn-primary w-full" style={{ height: 56, fontSize: 16, fontWeight: 700 }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
               Generate Study Session ⚡
             </button>
           </div>
@@ -658,7 +693,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
 // ═══════════════════════════════════════════════
 // QUIZ SCREEN
 // ═══════════════════════════════════════════════
-function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answers, setAnswers, submitted, setSubmitted, quizTitle, startTime, config, apiKey, callAnthropic, showError, onComplete }) {
+function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answers, setAnswers, submitted, setSubmitted, quizTitle, startTime, config, showError, onComplete }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -874,7 +909,7 @@ function FillBlankQuestion({ question, submitted, answer, onAnswer }) {
   );
 }
 
-function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, callAnthropic }) {
+function ShortAnswerQuestion({ question, submitted, answer, onAnswer }) {
   const [val, setVal] = useState('');
   const [loading, setLoading] = useState(false);
   const wordCount = val.split(/\s+/).filter(x => x).length;
@@ -882,14 +917,23 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
   const submit = async () => {
     if (!val.trim()) return;
     setLoading(true);
-    try {
-      const raw = await callAnthropic([{ role: 'user', content: SHORT_ANSWER_EVAL_PROMPT(question, val) }], "You are an evaluator. Respond only in JSON.");
-      const evalData = parseJSON(raw);
-      onAnswer({ value: val, isCorrect: evalData.score_pct >= 70, score: evalData.score_pct, mentioned: evalData.mentioned, missed: evalData.missed, feedback: evalData.feedback });
-    } catch (e) {
-      alert('Evaluation failed. Please try again.');
-    }
-    setLoading(false);
+    setTimeout(() => {
+      const userWords = val.toLowerCase().split(/\W+/);
+      const keyPoints = question.key_points || [];
+      const mentioned = keyPoints.filter(kp => userWords.some(uw => kp.toLowerCase().includes(uw) || uw.includes(kp.toLowerCase())));
+      const missed = keyPoints.filter(kp => !mentioned.includes(kp));
+      const score = Math.round((mentioned.length / (keyPoints.length || 1)) * 100);
+      
+      onAnswer({ 
+        value: val, 
+        isCorrect: score >= 50, 
+        score, 
+        mentioned, 
+        missed, 
+        feedback: score >= 70 ? "Excellent summary! You captured the main ideas well." : "You've touched on some points, but try to include more specific details from the text." 
+      });
+      setLoading(false);
+    }, 1000);
   };
 
   return (
