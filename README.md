@@ -1,6 +1,6 @@
-# PrepAI — Brutalist PDF/PPTX Quizzer
+# RawPrep — Brutalist PDF/PPTX Quizzer
 
-**PrepAI** is a high-performance, 100% local-first web application designed for students and professionals to transform their study materials into interactive quizzes. Built with a bold **Brutalist** aesthetic, PrepAI prioritizes privacy, speed, and focus.
+**RawPrep** is a high-performance, 100% local-first web application designed for students and professionals to transform their study materials into interactive quizzes. Built with a bold **Brutalist** aesthetic, RawPrep prioritizes privacy, speed, and focus.
 
 ---
 
@@ -60,4 +60,4 @@ PrepAI is designed with **Privacy-by-Design**. Since all processing occurs clien
 
 ---
 
-**PrepAI — Prepare smarter, locally.**
+**RawPrep — Prepare smarter, locally.**
