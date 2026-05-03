@@ -299,7 +299,7 @@ const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
   const shuffled = shuffle(filtered).slice(0, count);
   
   return {
-    quiz_title: "Offline Study Session",
+    quiz_title: "PrepAI Session",
     topics_covered: ["Key Concepts"],
     questions: shuffled.map((s, i) => {
       // Rotate through the user's selected types
@@ -414,7 +414,7 @@ const generateLocalStudyPlan = (questions, answers) => {
   };
 };
 
-export default function StudyMap() {
+export default function PrepAI() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
@@ -616,7 +616,7 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
     <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
       <div className="card fade-in-up" style={{ maxWidth: 680, width: '100%', margin: '0 auto', padding: '2.5rem', border: '4px solid #000', boxShadow: '16px 16px 0px #000' }}>
         <div className="text-center mb-8">
-          <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900 }}>STUDYMAP AI</h1>
+          <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900 }}>PREPAI</h1>
         </div>
 
         {!uploadedFile ? (
@@ -752,7 +752,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
     <div>
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '4px solid #000', padding: '1.5rem 0' }}>
         <div className="container flex justify-between items-center" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>StudyMap AI</div>
+          <div style={{ fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>PrepAI</div>
           <div style={{ fontSize: 13, fontWeight: 900, background: '#000', color: '#FFF', padding: '6px 12px', textTransform: 'uppercase' }}>Q {currentIndex + 1} / {questions.length}</div>
           
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
