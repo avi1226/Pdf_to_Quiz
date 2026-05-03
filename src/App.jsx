@@ -1321,13 +1321,13 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
       <h2 className="mb-4">Your Study Plan</h2>
       <div className="card mb-8 fade-in-up" style={{ animationDelay: '0.4s' }}>
         {!studyPlan ? (
-          <div className="text-center" style={{ padding: '2rem' }}><div style={{ width: 24, height: 24, borderRadius: 0%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />Generating...</div>
+          <div className="text-center" style={{ padding: '2rem' }}><div style={{ width: 24, height: 24, borderRadius: 0, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />Generating...</div>
         ) : (
           <>
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{studyPlan.summary}</p>
             {studyPlan.study_priority?.map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: i < studyPlan.study_priority.length - 1 ? '2px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 0%', background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
+                <div style={{ width: 28, height: 28, borderRadius: 0, background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
                 <div>
                   <div style={{ fontWeight: 600 }}>{item.topic}</div>
                   <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{item.reason}</div>
