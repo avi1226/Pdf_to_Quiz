@@ -680,24 +680,29 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 
   return (
     <div>
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(9, 10, 15, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)', padding: '1rem 0' }}>
-        <div className="container flex justify-between items-center">
-          <div style={{ fontWeight: 700, fontSize: 18 }} className="text-gradient">StudyMap AI</div>
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, background: 'var(--bg-surface)', padding: '4px 12px', borderRadius: 0 }}>Question {currentIndex + 1} of {questions.length}</div>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ fontSize: 14, display: 'flex', gap: 12 }}>
-              <span style={{ color: 'var(--correct)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: 0, background: 'var(--correct)', boxShadow: '0 0 8px var(--correct)'}}/> {correctCount}</span>
-              <span style={{ color: 'var(--wrong)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: 0, background: 'var(--wrong)', boxShadow: '0 0 8px var(--wrong)'}}/> {wrongCount}</span>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '4px solid #000', padding: '1.5rem 0' }}>
+        <div className="container flex justify-between items-center" style={{ gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>StudyMap AI</div>
+          <div style={{ fontSize: 13, fontWeight: 900, background: '#000', color: '#FFF', padding: '6px 12px', textTransform: 'uppercase' }}>Q {currentIndex + 1} / {questions.length}</div>
+          
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <span style={{ color: '#000', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <span style={{width: 12, height: 12, background: '#000', border: '1px solid #000'}}/> {correctCount}
+              </span>
+              <span style={{ color: '#888', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                <span style={{width: 12, height: 12, border: '2px solid #000'}}/> {wrongCount}
+              </span>
             </div>
             {config.mode === 'exam' && (
-              <div className="mono" style={{ fontSize: 14, background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 900, background: '#F0F0F0', padding: '6px 12px', border: '2px solid #000' }}>
                 {Math.floor(elapsed / 60).toString().padStart(2, '0')}:{(elapsed % 60).toString().padStart(2, '0')}
               </div>
             )}
           </div>
         </div>
-        <div style={{ width: '100%', height: 2, background: 'var(--border)', marginTop: '1rem', position: 'absolute', bottom: 0, left: 0 }}>
-          <div style={{ width: `${progress}%`, height: '100%', background: '#000000', transition: 'width 0.4s ease', boxShadow: 'none' }} role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={questions.length} />
+        <div style={{ width: '100%', height: 8, background: '#F0F0F0', marginTop: '1.5rem', position: 'relative' }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: '#000', transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }} role="progressbar" />
         </div>
       </div>
 
@@ -1176,37 +1181,31 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
     <div className="container" style={{ padding: '3rem 1rem' }}>
       
       {/* SECTION A — SCORE HERO */}
-      <div className="card text-center mb-8 fade-in-up" style={{ padding: '3rem 2rem', background: 'rgba(20, 22, 30, 0.8)', border: '2px solid #000' }}>
-        <h1 style={{ fontSize: 32, marginBottom: '2rem' }} className="text-gradient">Session Complete</h1>
+      <div className="card text-center mb-8 fade-in-up" style={{ padding: '4rem 2rem', background: '#FFFFFF', border: '4px solid #000', boxShadow: '12px 12px 0px #000' }}>
+        <h1 style={{ fontSize: 48, marginBottom: '2rem' }}>SESSION COMPLETE</h1>
         
-        <div style={{ position: 'relative', width: 180, height: 180, margin: '0 auto' }}>
-          <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label={`Score: ${scorePct}%`}>
-            <defs>
-              <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#000000" />
-                <stop offset="100%" stopColor="#000000" />
-              </linearGradient>
-            </defs>
-            <circle cx="90" cy="90" r="65" stroke="var(--bg-surface)" strokeWidth="14" fill="none" />
-            <circle cx="90" cy="90" r="65" stroke="url(#scoreGrad)" strokeWidth="14" fill="none" strokeDasharray="408" strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} strokeLinecap="round" />
+        <div style={{ position: 'relative', width: 220, height: 220, margin: '0 auto' }}>
+          <svg width="220" height="220" viewBox="0 0 220 220">
+            <circle cx="110" cy="110" r="90" stroke="#F0F0F0" strokeWidth="20" fill="none" />
+            <circle cx="110" cy="110" r="90" stroke="#000" strokeWidth="20" fill="none" strokeDasharray="565" strokeDashoffset={565 - (scorePct / 100 * 565)} style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
           </svg>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 42, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{scorePct}%</span>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 56, fontWeight: 900, color: '#000' }}>{scorePct}%</span>
           </div>
         </div>
         
-        <p style={{ color: 'var(--text-primary)', marginTop: 24, fontSize: 20, fontWeight: 600 }}>{msg}</p>
+        <p style={{ color: '#000', marginTop: 32, fontSize: 24, fontWeight: 900, textTransform: 'uppercase' }}>{msg}</p>
         
-        <div style={{ display: 'flex', gap: '2rem', marginTop: '2.5rem', justifyContent: 'center', flexWrap: 'wrap', background: 'var(--bg-page)', padding: '1.5rem', borderRadius: 0 }}>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Correct</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--correct)' }}>{correct}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Wrong</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--wrong)' }}>{wrong}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Skipped</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>{skipped}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Time</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>{Math.floor(timeTaken/60)}m {timeTaken%60}s</div></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', marginTop: '3rem', background: '#000', padding: '2rem', color: '#FFF' }}>
+          <div><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 900, marginBottom: 8 }}>Correct</div><div style={{ fontSize: 32, fontWeight: 900 }}>{correct}</div></div>
+          <div><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 900, marginBottom: 8 }}>Wrong</div><div style={{ fontSize: 32, fontWeight: 900 }}>{wrong}</div></div>
+          <div><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 900, marginBottom: 8 }}>Skipped</div><div style={{ fontSize: 32, fontWeight: 900 }}>{skipped}</div></div>
+          <div><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 900, marginBottom: 8 }}>Time</div><div style={{ fontSize: 32, fontWeight: 900 }}>{Math.floor(timeTaken/60)}m {timeTaken%60}s</div></div>
         </div>
       </div>
 
       {/* SECTION B — STUDY RECOMMENDATIONS (MOVED UP FOR BETTER UX) */}
-      <h2 className="mb-4 text-gradient" style={{ fontSize: 24 }}>AI AI Study Plan</h2>
+      <h2 className="mb-4" style={{ fontSize: 28, fontWeight: 900 }}>AI STUDY PLAN</h2>
       <div className="card mb-8 fade-in-up" style={{ animationDelay: '0.2s' }}>
         {!studyPlan ? (
           <div className="text-center" style={{ padding: '3rem 1rem' }}>
