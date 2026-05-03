@@ -636,9 +636,19 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
           </div>
         ) : (
           <div className="fade-in-up">
-            <div style={{ background: '#000', padding: '20px 24px', border: '2px solid #000', color: '#fff', marginBottom: '1.5rem', textAlign: 'center' }}>
-              <div style={{ fontWeight: 900, fontSize: 16, textTransform: 'uppercase', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
-              <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>{pdfMeta.pageCount} SLIDES/PAGES · {pdfMeta.wordCount} WORDS EXTRACTED</div>
+            <div style={{ background: '#000', padding: '16px 20px', border: '2px solid #000', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ fontWeight: 900, fontSize: 16, textTransform: 'uppercase', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>{pdfMeta.pageCount} SLIDES/PAGES · {pdfMeta.wordCount} WORDS</div>
+              </div>
+              <button 
+                onClick={() => { setUploadedFile(null); setPdfText(''); setPdfMeta({ pageCount: 0, wordCount: 0 }); }}
+                style={{ background: 'transparent', color: '#FFF', border: '2px solid #FFF', padding: '8px 12px', fontSize: 14, fontWeight: 900, cursor: 'pointer', transition: 'all 0.1s' }}
+                onMouseEnter={e => { e.target.style.background = '#FFF'; e.target.style.color = '#000'; }}
+                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#FFF'; }}
+              >
+                ✕
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
