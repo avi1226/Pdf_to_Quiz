@@ -616,7 +616,7 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
     <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
       <div className="card fade-in-up" style={{ maxWidth: 680, width: '100%', margin: '0 auto', padding: '2.5rem', border: '4px solid #000', boxShadow: '16px 16px 0px #000' }}>
         <div className="text-center mb-8">
-          <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900 }}>RAWPREP</h1>
+          <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900, textTransform: 'none' }}>RawPrep</h1>
         </div>
 
         {!uploadedFile ? (
@@ -752,7 +752,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
     <div>
       <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '4px solid #000', padding: '1.5rem 0' }}>
         <div className="container flex justify-between items-center" style={{ gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ fontWeight: 900, fontSize: 24, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>RawPrep</div>
+          <div style={{ fontWeight: 900, fontSize: 24, textTransform: 'none', letterSpacing: '-0.02em' }}>RawPrep</div>
           <div style={{ fontSize: 13, fontWeight: 900, background: '#000', color: '#FFF', padding: '6px 12px', textTransform: 'uppercase' }}>Q {currentIndex + 1} / {questions.length}</div>
           
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
