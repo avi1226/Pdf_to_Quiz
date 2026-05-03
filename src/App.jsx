@@ -578,7 +578,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
         {!uploadedFile ? (
           <div className="mb-4">
             <div className="upload-zone"
-              style={{ border: \`2px dashed \${isDragOver ? 'var(--primary)' : 'var(--border)'}\`, background: isDragOver ? 'var(--primary-light)' : 'var(--bg-surface)', borderRadius: 'var(--radius-md)', minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease', animation: isDragOver ? 'pulseGlow 2s infinite' : 'none' }}
+              style={{ border: `2px dashed ${isDragOver ? 'var(--primary)' : 'var(--border)'}`, background: isDragOver ? 'var(--primary-light)' : 'var(--bg-surface)', borderRadius: 'var(--radius-md)', minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease', animation: isDragOver ? 'pulseGlow 2s infinite' : 'none' }}
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
@@ -620,8 +620,8 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
             <div className="mb-6">
               <label>Mode</label>
               <div className="flex gap-2">
-                <button className={\`btn \${config.mode === 'exam' ? 'btn-primary' : 'btn-outline'}\`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 Exam Mode</button>
-                <button className={\`btn \${config.mode === 'interview' ? 'btn-primary' : 'btn-outline'}\`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 Interview Mode</button>
+                <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 Exam Mode</button>
+                <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 Interview Mode</button>
               </div>
             </div>
 
@@ -637,7 +637,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
                 ].map(t => {
                   const active = config.types.includes(t.id);
                   return (
-                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: \`1px solid \${active ? 'var(--primary)' : 'var(--border)'}\`, background: active ? 'var(--primary-light)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: active ? 'var(--shadow-glow)' : 'none' }}>
+                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--primary-light)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: active ? 'var(--shadow-glow)' : 'none' }}>
                       {active ? '✓ ' : ''}{t.label}
                     </button>
                   )
@@ -714,7 +714,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
           </div>
         </div>
         <div style={{ width: '100%', height: 2, background: 'var(--border)', marginTop: '1rem', position: 'absolute', bottom: 0, left: 0 }}>
-          <div style={{ width: \`\${progress}%\`, height: '100%', background: 'var(--gradient-main)', transition: 'width 0.4s ease', boxShadow: 'var(--shadow-glow)' }} role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={questions.length} />
+          <div style={{ width: `${progress}%`, height: '100%', background: 'var(--gradient-main)', transition: 'width 0.4s ease', boxShadow: 'var(--shadow-glow)' }} role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={questions.length} />
         </div>
       </div>
 
@@ -761,9 +761,9 @@ function ExplanationBox({ question, isCorrect, partialScore, isPartial }) {
   const colorVar = correct ? '--correct' : isPartial ? '--partial' : '--wrong';
   const bgVar = correct ? '--correct-bg' : isPartial ? '--partial-bg' : '--wrong-bg';
   return (
-    <div style={{ maxHeight: 500, overflow: 'hidden', transition: 'max-height 0.35s ease', marginTop: '1.5rem', padding: '1.5rem', background: \`var(\${bgVar})\`, border: \`1px solid var(\${colorVar})\`, borderRadius: 'var(--radius-md)' }} className="fade-in-up">
-      <div style={{ color: \`var(\${colorVar})\`, fontWeight: 700, fontSize: 16, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {correct ? '✓ Correct!' : isPartial ? \`\${partialScore} Correct\` : '✗ Incorrect'}
+    <div style={{ maxHeight: 500, overflow: 'hidden', transition: 'max-height 0.35s ease', marginTop: '1.5rem', padding: '1.5rem', background: `var(${bgVar})`, border: `1px solid var(${colorVar})`, borderRadius: 'var(--radius-md)' }} className="fade-in-up">
+      <div style={{ color: `var(${colorVar})`, fontWeight: 700, fontSize: 16, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {correct ? '✓ Correct!' : isPartial ? `${partialScore} Correct` : '✗ Incorrect'}
       </div>
       <p style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.6 }}>{question.explanation}</p>
       {question.page_ref && <p style={{ fontSize: 12, color: 'var(--text-hint)', fontStyle: 'italic', marginTop: 12, opacity: 0.8 }}>Source: {question.page_ref}</p>}
@@ -907,7 +907,7 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
           <div className="fade-in-up">
             <div style={{ background: 'var(--bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                <div style={{ width: 60, height: 60, borderRadius: '50%', background: answer.isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)', border: \`2px solid \${answer.isCorrect ? 'var(--correct)' : 'var(--wrong)'}\`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: answer.isCorrect ? 'var(--correct)' : 'var(--wrong)' }}>
+                <div style={{ width: 60, height: 60, borderRadius: '50%', background: answer.isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)', border: `2px solid ${answer.isCorrect ? 'var(--correct)' : 'var(--wrong)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: answer.isCorrect ? 'var(--correct)' : 'var(--wrong)' }}>
                   {answer.score}%
                 </div>
                 <div>
@@ -917,8 +917,8 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
               </div>
               
               <ul style={{ listStyle: 'none', marginBottom: 20, background: 'var(--bg-page)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                {answer.mentioned?.map((m, i) => <li key={\`m-\${i}\`} style={{ color: 'var(--correct)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✓</span> <span>You mentioned: {m}</span></li>)}
-                {answer.missed?.map((m, i) => <li key={\`x-\${i}\`} style={{ color: 'var(--wrong)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✗</span> <span>You missed: {m}</span></li>)}
+                {answer.mentioned?.map((m, i) => <li key={`m-${i}`} style={{ color: 'var(--correct)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✓</span> <span>You mentioned: {m}</span></li>)}
+                {answer.missed?.map((m, i) => <li key={`x-${i}`} style={{ color: 'var(--wrong)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✗</span> <span>You missed: {m}</span></li>)}
               </ul>
               <p style={{ fontStyle: 'italic', color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.6, borderLeft: '3px solid var(--primary)', paddingLeft: 12 }}>{answer.feedback}</p>
             </div>
@@ -1048,7 +1048,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               else if (isDragging) { style.opacity = 0.5; style.transform = 'scale(0.95)'; }
               
               return (
-                <div key={chip.id} style={style} draggable={!isUsed && !submitted && !isMobile} role="button" aria-grabbed={isDragging} aria-label={\`Drag chip: \${chip.label}\`}
+                <div key={chip.id} style={style} draggable={!isUsed && !submitted && !isMobile} role="button" aria-grabbed={isDragging} aria-label={`Drag chip: ${chip.label}`}
                   onDragStart={(e) => !isMobile && handleChipDragStart(e, chip.id, 'bank')}
                   onDragEnd={() => setDragState({ draggingChipId: null, overZoneId: null })}
                   onClick={() => isMobile && !isUsed && !submitted && handleChipTap(chip.id)}
@@ -1073,7 +1073,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               if (activeZone) {
                 const filledChip = (submitted && answer?.chipBank ? answer.chipBank : chipBank).find(c => c.id === activeZone.placedChipId);
                 let style = { minWidth: 140, height: 44, border: '2px dashed var(--border-strong)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--text-hint)', position: 'relative', transition: 'all 0.2s ease' };
-                let content = \`Zone \${activeZone.number || i+1}\`;
+                let content = `Zone ${activeZone.number || i+1}`;
                 
                 if (dragState.overZoneId === activeZone.id || (isMobile && selectedChipId)) {
                   style.border = '2px solid var(--primary)'; style.background = 'var(--primary-light)'; style.boxShadow = 'var(--shadow-glow)';
@@ -1087,7 +1087,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                 }
 
                 DropZoneCmp = (
-                  <div style={style} role="listitem" aria-label={\`Drop zone \${activeZone.number}: \${filledChip ? filledChip.label : 'empty'}\`}
+                  <div style={style} role="listitem" aria-label={`Drop zone ${activeZone.number}: ${filledChip ? filledChip.label : 'empty'}`}
                     onDragOver={e => { if(!submitted && !isMobile){ e.preventDefault(); setDragState(prev => ({...prev, overZoneId: activeZone.id})); } }}
                     onDragLeave={() => !submitted && setDragState(prev => ({...prev, overZoneId: null}))}
                     onDrop={e => { if(!submitted && !isMobile) handleDrop(e, activeZone.id); }}
@@ -1137,7 +1137,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
       
       {submitted && !answer.skipped && (
         <div className="fade-in-up mt-8">
-          <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={\`\${answer.score}/\${answer.total}\`} />
+          <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={`${answer.score}/${answer.total}`} />
         </div>
       )}
     </div>
@@ -1188,7 +1188,7 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
         <h1 style={{ fontSize: 32, marginBottom: '2rem' }} className="text-gradient">Session Complete</h1>
         
         <div style={{ position: 'relative', width: 180, height: 180, margin: '0 auto' }}>
-          <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label={\`Score: \${scorePct}%\`}>
+          <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label={`Score: ${scorePct}%`}>
             <defs>
               <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#6366F1" />
@@ -1284,14 +1284,14 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
           const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--partial-bg)' : 'var(--wrong-bg)';
           const color = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
           return (
-            <div key={topic} style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: \`1px solid \${color}\`, boxShadow: 'var(--shadow-sm)' }} className="fade-in-up" style={{ animationDelay: \`\${0.3 + (idx * 0.1)}s\` }}>
+            <div key={topic} style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: `1px solid ${color}`, boxShadow: 'var(--shadow-sm)' }} className="fade-in-up" style={{ animationDelay: `${0.3 + (idx * 0.1)}s` }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>{topic}</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 28, fontWeight: 800, color: color, lineHeight: 1 }}>{pct}%</span>
                 <span style={{ fontSize: 13, color: 'var(--text-hint)' }}>{data.correct}/{data.total}</span>
               </div>
               <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--bg-page)', overflow: 'hidden' }}>
-                <div style={{ width: \`\${pct}%\`, height: '100%', background: color, borderRadius: 2 }} />
+                <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2 }} />
               </div>
             </div>
           );
