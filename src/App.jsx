@@ -553,42 +553,42 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
   };
 
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
-      <div className="card fade-in-up" style={{ maxWidth: 640, margin: '0 auto' }}>
-        <div className="text-center mb-10">
-          <h1 style={{ fontSize: 48, letterSpacing: '-0.04em' }}>StudyMap AI</h1>
+    <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem' }}>
+      <div className="card fade-in-up" style={{ maxWidth: 680, width: '100%', margin: '0 auto', padding: '2.5rem', border: '4px solid #000', boxShadow: '16px 16px 0px #000' }}>
+        <div className="text-center mb-8">
+          <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900 }}>STUDYMAP AI</h1>
         </div>
 
         {!uploadedFile ? (
           <div className="mb-4">
             <div className="upload-zone"
-              style={{ border: `4px dashed #000`, padding: '3rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s ease' }}
+              style={{ border: `4px dashed #000`, padding: '4rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s ease' }}
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
               onClick={() => fileInputRef.current?.click()}
             >
               <input type="file" accept=".pdf,.pptx" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
-              <div style={{ fontSize: 64, marginBottom: 16 }}>📁</div>
+              <div style={{ fontSize: 64, marginBottom: 20 }}>📁</div>
               <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF OR PPTX</p>
               <p style={{ fontSize: 14, marginTop: 8, opacity: 0.6 }}>DRAG & DROP OR CLICK TO BROWSE</p>
             </div>
           </div>
         ) : (
           <div className="fade-in-up">
-            <div style={{ background: '#000', padding: '24px', border: '2px solid #000', color: '#fff', marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{ fontWeight: 900, fontSize: 18, textTransform: 'uppercase', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
+            <div style={{ background: '#000', padding: '20px 24px', border: '2px solid #000', color: '#fff', marginBottom: '1.5rem', textAlign: 'center' }}>
+              <div style={{ fontWeight: 900, fontSize: 16, textTransform: 'uppercase', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
               <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>{pdfMeta.pageCount} SLIDES/PAGES · {pdfMeta.wordCount} WORDS EXTRACTED</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
-              <div className="grid-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
+              <div className="grid-2" style={{ gap: '1.5rem' }}>
                 <div>
-                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>QUESTIONS: {config.questionCount}</label>
+                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 6 }}>QUESTIONS: {config.questionCount}</label>
                   <input type="range" min={5} max={30} step={1} value={config.questionCount} onChange={e => setConfig({ ...config, questionCount: Number(e.target.value) })} style={{ height: 10, cursor: 'pointer' }} />
                 </div>
                 <div>
-                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>DIFFICULTY</label>
+                  <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 6 }}>DIFFICULTY</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '2px solid #000', background: '#000', gap: 2 }}>
                     {['easy', 'medium', 'hard'].map(lvl => (
                       <button key={lvl} style={{ border: 'none', padding: '10px 0', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', cursor: 'pointer', background: config.difficulty === lvl ? '#000' : '#FFF', color: config.difficulty === lvl ? '#FFF' : '#000' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
@@ -600,15 +600,15 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
               </div>
 
               <div>
-                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>SESSION MODE</label>
+                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 6 }}>SESSION MODE</label>
                 <div className="grid-2" style={{ gap: 12 }}>
-                  <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 EXAM</button>
-                  <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 INTERVIEW</button>
+                  <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48, fontSize: 14 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 EXAM</button>
+                  <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : ''}`} style={{ flex: 1, minHeight: 48, fontSize: 14 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 INTERVIEW</button>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 8 }}>QUESTION TYPES</label>
+                <label style={{ fontWeight: 900, fontSize: 12, display: 'block', marginBottom: 6 }}>QUESTION TYPES</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {[
                     { id: 'mcq', label: 'MCQ' },
@@ -619,7 +619,7 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
                   ].map(t => {
                     const active = config.types.includes(t.id);
                     return (
-                      <button key={t.id} onClick={() => toggleType(t.id)} style={{ flex: '1 1 auto', padding: '10px 12px', border: '2px solid #000', background: active ? '#000' : '#FFF', color: active ? '#FFF' : '#000', fontSize: 11, fontWeight: 900, cursor: 'pointer', transition: 'all 0.1s' }}>
+                      <button key={t.id} onClick={() => toggleType(t.id)} style={{ flex: '1 1 auto', padding: '10px 14px', border: '2px solid #000', background: active ? '#000' : '#FFF', color: active ? '#FFF' : '#000', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>
                         {active ? '✓ ' : ''}{t.label}
                       </button>
                     )
@@ -628,7 +628,7 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
               </div>
             </div>
 
-            <button className="btn btn-primary w-full" style={{ height: 64, fontSize: 18, border: '4px solid #000' }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
+            <button className="btn btn-primary w-full" style={{ height: 60, fontSize: 18, border: '4px solid #000' }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
               START SESSION ⚡
             </button>
           </div>
