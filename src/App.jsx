@@ -433,38 +433,7 @@ export default function StudyMap() {
     document.head.appendChild(script);
   }, []);
 
-  // RESTORED REAL API CALL
-  const callAnthropic = async (messages, systemPrompt, retries = 1) => {
-    if (!apiKey) throw new Error("Missing API Key");
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022', // Updated to latest claude 3.5 model
-          max_tokens: 4000,
-          system: systemPrompt,
-          messages: messages
-        })
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'API error');
-      }
-      const data = await response.json();
-      return data.content[0].text;
-    } catch (err) {
-      if (retries > 0 && err.message.includes('parse')) {
-        return callAnthropic(messages, systemPrompt, retries - 1);
-      }
-      throw err;
-    }
-  };
+
 
   const showError = (code, message) => {
     setError({ code, message });
@@ -528,7 +497,7 @@ export default function StudyMap() {
           <div className="text-center card float" style={{ padding: '3rem', minWidth: '300px' }}>
             <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 1s ease-in-out infinite', margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-glow)' }} />
             <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem' }} className="fade-in">{loadingMessage}</div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Powered by Claude 3.5 Sonnet</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Processing Locally</div>
           </div>
         </div>
       )}
@@ -543,8 +512,6 @@ export default function StudyMap() {
           quizTitle={quizTitle}
           startTime={startTime}
           config={config}
-          apiKey={apiKey}
-          callAnthropic={callAnthropic}
           showError={showError}
           onComplete={async () => {
             setScreen('results');
