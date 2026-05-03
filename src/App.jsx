@@ -1126,7 +1126,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                     onClick={() => { if(!submitted && isMobile) handleZoneTap(activeZone.id); }}
                   >
                     {content}
-                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: 0%', background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
+                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: 0, background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
                     {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 2, fontWeight: 600 }}>{zr.correctLabel}</div>}
                   </div>
                 );
