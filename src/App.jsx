@@ -280,9 +280,7 @@ export default function StudyMap() {
   }, []);
 
   const [screen, setScreen] = useState('upload'); // 'upload' | 'loading' | 'quiz' | 'results'
-  const [apiKey, setApiKey] = useState('');
-  const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [pdfjsReady, setPdfjsReady] = useState(false);
+    const [pdfjsReady, setPdfjsReady] = useState(false);
 
   const [uploadedFile, setUploadedFile] = useState(null);
   const [pdfText, setPdfText] = useState('');
@@ -318,34 +316,103 @@ export default function StudyMap() {
   }, []);
 
   const callAnthropic = async (messages, systemPrompt, retries = 1) => {
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          system: systemPrompt,
-          messages: messages
-        })
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'API error');
-      }
-      const data = await response.json();
-      return data.content[0].text;
-    } catch (err) {
-      if (retries > 0 && err.message.includes('parse')) {
-        return callAnthropic(messages, systemPrompt, retries - 1);
-      }
-      throw err;
-    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (systemPrompt === SYSTEM_PROMPT) {
+          resolve(JSON.stringify({
+            "quiz_title": "Biology Cell Structure Demo",
+            "topics_covered": ["Cell Biology"],
+            "questions": [
+              {
+                "id": "q1",
+                "type": "mcq",
+                "topic_tag": "Cell Biology",
+                "difficulty": "easy",
+                "page_ref": "Page 1",
+                "question": "What is the powerhouse of the cell?",
+                "options": ["Nucleus", "Ribosome", "Mitochondria", "Golgi"],
+                "correct_answer": "Mitochondria",
+                "explanation": "Mitochondria generate most of the cell's supply of ATP, used as a source of chemical energy."
+              },
+              {
+                "id": "q2",
+                "type": "true_false",
+                "topic_tag": "Cell Biology",
+                "difficulty": "easy",
+                "page_ref": "Page 2",
+                "question": "Plant cells have a cell wall, but animal cells do not.",
+                "correct_answer": "true",
+                "explanation": "Plant cells have a rigid cell wall outside the plasma membrane, providing structural support."
+              },
+              {
+                "id": "q3",
+                "type": "fill_blank",
+                "topic_tag": "Cell Biology",
+                "difficulty": "medium",
+                "page_ref": "Page 3",
+                "sentence": "The ___ contains the genetic material of the cell.",
+                "correct_answer": "nucleus",
+                "explanation": "The nucleus is the control center of the cell containing DNA."
+              },
+              {
+                "id": "q4",
+                "type": "short_answer",
+                "topic_tag": "Cell Biology",
+                "difficulty": "hard",
+                "page_ref": "Page 4",
+                "question": "Explain the role of ribosomes.",
+                "model_answer": "Ribosomes are responsible for protein synthesis.",
+                "key_points": ["protein synthesis"],
+                "explanation": "Ribosomes read mRNA to synthesize proteins."
+              },
+              {
+                "id": "q5",
+                "type": "diagram",
+                "topic_tag": "Cell Biology",
+                "difficulty": "medium",
+                "page_ref": "Page 5",
+                "question": "Identify the cell organelles",
+                "diagram_type": "anatomy",
+                "diagram_title": "Cell Diagram",
+                "diagram_description": "Label the parts of the cell.",
+                "nodes": [
+                  { "id": "n1", "type": "process", "display_text": "Outer layer" },
+                  { "id": "n2", "type": "process", "display_text": "Energy center" }
+                ],
+                "drop_zones": [
+                  { "id": "z1", "node_id": "n1", "number": 1, "correct_chip_id": "c1" },
+                  { "id": "z2", "node_id": "n2", "number": 2, "correct_chip_id": "c2" }
+                ],
+                "answer_chips": [
+                  { "id": "c1", "label": "Cell Membrane", "correct_zone_id": "z1" },
+                  { "id": "c2", "label": "Mitochondria", "correct_zone_id": "z2" }
+                ],
+                "explanation": "The cell membrane is the outer layer, and mitochondria is the energy center."
+              }
+            ]
+          }));
+        } else if (systemPrompt === STUDY_PLAN_SYSTEM_PROMPT) {
+          resolve(JSON.stringify({
+            "summary": "Great job! You have a good understanding of basic cell structures.",
+            "study_priority": [
+              {
+                "topic": "Cell Biology",
+                "score_pct": 80,
+                "reason": "You did well, but can review advanced functions.",
+                "action": "Review cell metabolism chapters."
+              }
+            ]
+          }));
+        } else {
+          resolve(JSON.stringify({
+            "score_pct": 100,
+            "mentioned": ["protein synthesis"],
+            "missed": [],
+            "feedback": "Perfect answer."
+          }));
+        }
+      }, 3000);
+    });
   };
 
   const showError = (code, message) => {
@@ -375,9 +442,7 @@ export default function StudyMap() {
 
       {screen === 'upload' && (
         <UploadScreen
-          apiKey={apiKey} setApiKey={setApiKey}
-          apiKeyVisible={apiKeyVisible} setApiKeyVisible={setApiKeyVisible}
-          pdfjsReady={pdfjsReady}
+                    pdfjsReady={pdfjsReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
@@ -435,8 +500,7 @@ export default function StudyMap() {
           quizTitle={quizTitle}
           startTime={startTime}
           config={config}
-          apiKey={apiKey}
-          callAnthropic={callAnthropic}
+                    callAnthropic={callAnthropic}
           showError={showError}
           onComplete={async () => {
             setScreen('results');
@@ -473,7 +537,7 @@ export default function StudyMap() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -508,16 +572,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
           <p style={{ color: 'var(--text-secondary)' }}>Turn your PDFs into exam-ready practice</p>
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="apiKeyInput">Anthropic API Key</label>
-          <div style={{ position: 'relative' }}>
-            <input id="apiKeyInput" type={apiKeyVisible ? 'text' : 'password'} placeholder="sk-ant-..." value={apiKey} onChange={e => setApiKey(e.target.value)} />
-            <button aria-label="Toggle API Key visibility" style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setApiKeyVisible(!apiKeyVisible)}>
-              {apiKeyVisible ? '🙈' : '👁️'}
-            </button>
-            {apiKey.startsWith('sk-ant-') && <span style={{ position: 'absolute', right: 40, top: 10, background: 'var(--correct-bg)', color: 'var(--correct)', padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>✓ Valid</span>}
-          </div>
-        </div>
+        
 
         {!uploadedFile ? (
           <div className="mb-4">
@@ -589,7 +644,7 @@ function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfj
               </div>
             </div>
 
-            <button className="btn btn-primary w-full" style={{ height: 48, fontSize: 16 }} disabled={!pdfText || !apiKey || config.types.length === 0} onClick={onGenerate}>
+            <button className="btn btn-primary w-full" style={{ height: 48, fontSize: 16 }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
               Generate Quiz →
             </button>
           </div>
