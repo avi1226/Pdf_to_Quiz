@@ -520,7 +520,7 @@ export default function StudyMap() {
       {screen === 'loading' && (
         <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="text-center">
-            <div style={{ width: 48, height: 48, borderRadius: 0%', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+            <div style={{ width: 48, height: 48, borderRadius: 0, border: '4px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
             <div style={{ color: 'var(--text-secondary)' }} className="fade-in">{loadingMessage}</div>
           </div>
         </div>
