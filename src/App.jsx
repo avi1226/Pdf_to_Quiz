@@ -1,105 +1,108 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // ═══════════════════════════════════════════════
-// CSS & THEME
+// CSS & PREMIUM THEME (Modern Dark Glassmorphism)
 // ═══════════════════════════════════════════════
 const STYLES = `
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;900&family=JetBrains+Mono:wght@400;500;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
   /* ── BACKGROUNDS ── */
-  --bg-page:          #F5F5F5;
-  --bg-card:          #FFFFFF;
-  --bg-surface:       #FFFFFF;
-  --bg-elevated:      #FFFFFF;
-  --bg-overlay:       #FFFFFF;
+  --bg-page:          #090A0F;
+  --bg-card:          rgba(20, 22, 30, 0.6);
+  --bg-surface:       rgba(255, 255, 255, 0.03);
+  --bg-elevated:      rgba(255, 255, 255, 0.08);
 
   /* ── BORDERS ── */
-  --border-subtle:    #2C2C2C;
-  --border:           #2C2C2C;
-  --border-strong:    #000000;
-  --border-white:     #2C2C2C;
+  --border:           rgba(255, 255, 255, 0.1);
+  --border-strong:    rgba(255, 255, 255, 0.2);
 
   /* ── TEXT ── */
-  --text-primary:     #000000;
-  --text-secondary:   #888888;
-  --text-hint:        #888888;
+  --text-primary:     #F8FAFC;
+  --text-secondary:   #94A3B8;
+  --text-hint:        #64748B;
   --text-inverse:     #FFFFFF;
 
-  /* ── PRIMARY ACCENT — PURE BLACK ── */
-  --primary:          #000000;
-  --primary-hover:    #333333;
-  --primary-muted:    #888888;
+  /* ── PRIMARY ACCENT (Vibrant) ── */
+  --primary:          #6366F1;
+  --primary-hover:    #4F46E5;
+  --primary-light:    rgba(99, 102, 241, 0.15);
+  
+  --accent:           #A855F7;
+  --gradient-main:    linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
 
-  /* ── SEMANTIC — BRUTALIST ── */
-  --correct:          #000000;
-  --correct-bg:       #FFFFFF;
-  --correct-border:   #000000;
+  /* ── SEMANTIC ── */
+  --correct:          #22C55E;
+  --correct-bg:       rgba(34, 197, 94, 0.1);
+  --correct-border:   rgba(34, 197, 94, 0.4);
 
-  --wrong:            #000000;
-  --wrong-bg:         #FFFFFF;
-  --wrong-border:     #000000;
+  --wrong:            #EF4444;
+  --wrong-bg:         rgba(239, 68, 68, 0.1);
+  --wrong-border:     rgba(239, 68, 68, 0.4);
 
-  --partial:          #000000;
-  --partial-bg:       #FFFFFF;
-  --partial-border:   #000000;
+  --partial:          #EAB308;
+  --partial-bg:       rgba(234, 179, 8, 0.1);
+  --partial-border:   rgba(234, 179, 8, 0.4);
 
   /* ── DRAG AND DROP ── */
-  --drag-idle:        #FFFFFF;
-  --drag-hover:       #F5F5F5;
-  --drag-border:      #2C2C2C;
-  --drag-border-active: #000000;
-  --drag-correct:     #FFFFFF;
-  --drag-wrong:       #FFFFFF;
+  --drag-idle:        rgba(255, 255, 255, 0.05);
+  --drag-hover:       rgba(255, 255, 255, 0.1);
+  --drag-border:      rgba(255, 255, 255, 0.15);
+  --drag-active:      #6366F1;
+  
+  --drop-empty:       rgba(0, 0, 0, 0.3);
+  --drop-active:      rgba(99, 102, 241, 0.1);
+  --drop-filled:      rgba(255, 255, 255, 0.08);
 
-  --drop-empty:       #FFFFFF;
-  --drop-active:      #F5F5F5;
-  --drop-filled:      #FFFFFF;
-  --drop-dashed:      #2C2C2C;
-
-  /* ── ZERO RADIUS & SHADOW ── */
-  --shadow-sm:   none;
-  --shadow-md:   none;
-  --shadow-drag: none;
-  --shadow-glow: none;
-
-  --radius-sm:   0px;
-  --radius-md:   0px;
-  --radius-lg:   0px;
-  --radius-pill: 0px;
+  /* ── EFFECTS ── */
+  --shadow-sm:        0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md:        0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  --shadow-glow:      0 0 20px rgba(99, 102, 241, 0.4);
+  
+  --radius-sm:        8px;
+  --radius-md:        16px;
+  --radius-lg:        24px;
 }
 
-/* ── GLOBAL RESET ── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg-page);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08), transparent 25%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-size: clamp(14px, 2vw, 16px);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-page); border-left: 2px solid var(--border); }
-::-webkit-scrollbar-thumb { background: var(--primary); }
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-/* ── FOCUS RING ── */
-:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+::selection { background: var(--primary-light); color: var(--text-inverse); }
 
-/* ── SELECTION ── */
-::selection { background: var(--primary); color: var(--text-inverse); }
+h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.text-gradient { background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+p { font-weight: 400; color: var(--text-secondary); }
+.mono { font-family: 'JetBrains Mono', monospace; }
 
-/* ── BRUTALIST TYPOGRAPHY ── */
-h1, h2, h3, h4, h5, h6 { font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: -0.02em; }
-p { font-weight: 400; color: var(--text-primary); }
-.mono { font-family: 'JetBrains Mono', monospace; font-weight: 900; }
-
-.container { max-width: 760px; margin: 0 auto; padding: 0 1rem; }
-.card { background: var(--bg-card); border-radius: 0; padding: 2rem; border: 2px solid var(--border); box-shadow: none; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 1rem; }
+.card { 
+  background: var(--bg-card); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radius-lg); 
+  padding: 2.5rem; 
+  border: 1px solid var(--border); 
+  box-shadow: var(--shadow-md); 
+}
 
 .text-center { text-align: center; }
 .text-right { text-align: right; }
@@ -108,47 +111,58 @@ p { font-weight: 400; color: var(--text-primary); }
 .flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; } .gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; }
 .w-full { width: 100%; }
 
-button, input, select, textarea { font-family: inherit; font-size: inherit; border-radius: 0; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
 
 /* ── BUTTONS ── */
-.btn { height: 48px; border: 2px solid var(--primary); border-radius: 0; padding: 0 1.25rem; font-weight: 900; cursor: pointer; transition: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--bg-surface); color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; }
-.btn:hover:not(:disabled) { background: var(--text-hint); color: var(--text-inverse); border-color: var(--text-hint); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
-.btn-primary { background: var(--primary); color: var(--text-inverse); }
-.btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--text-inverse); }
-.btn-outline { background: var(--bg-surface); border: 2px solid var(--border); color: var(--text-primary); }
-.btn-outline.active { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
+.btn { 
+  height: 48px; border: 1px solid var(--border); border-radius: var(--radius-md); 
+  padding: 0 1.5rem; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; 
+  background: var(--bg-surface); color: var(--text-primary); 
+}
+.btn:hover:not(:disabled) { background: var(--bg-elevated); transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary { background: var(--gradient-main); color: white; border: none; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25); }
+.btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-glow); filter: brightness(1.1); }
+
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+.btn-outline.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
 
 /* ── INPUTS ── */
-input[type="text"], input[type="password"], textarea { width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0; background: var(--bg-surface); color: var(--text-primary); min-height: 48px; transition: none; font-weight: 500; }
-input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: none; }
+input[type="text"], input[type="password"], textarea { 
+  width: 100%; padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-md); 
+  background: var(--bg-page); color: var(--text-primary); min-height: 48px; 
+  transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
 textarea { resize: vertical; min-height: 120px; }
-label { display: block; margin-bottom: 0.5rem; font-weight: 900; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; }
+label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary); font-size: 14px; }
 
-/* ── ANIMATIONS (REDUCED/REMOVED FOR BRUTALIST) ── */
+/* ── ANIMATIONS ── */
 @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideInRight { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes correctFlash { 0%,100% { background-color: var(--correct-bg); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse-border { 0%,100% { border-color: var(--border); } 50% { border-color: var(--primary); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
 
-.shake { animation: shake 0.2s ease; }
-.fade-in-up { animation: fadeInUp 0.2s ease both; }
-.slide-in-right { animation: slideInRight 0.2s ease; }
+.shake { animation: shake 0.4s ease; }
+.fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.float { animation: float 4s ease-in-out infinite; }
 
 /* Grid Layouts */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-.diagram-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1.5rem; }
+.diagram-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2rem; }
 
 @media (max-width: 639px) {
   .grid-2, .grid-3, .diagram-layout { grid-template-columns: 1fr; }
-  .card { padding: 1rem; border-width: 2px; }
+  .card { padding: 1.5rem; border-radius: var(--radius-md); }
   .btn, .input { width: 100%; }
 }
-
 `;
 
 // ═══════════════════════════════════════════════
@@ -171,7 +185,7 @@ const extractPdfText = async (file) => {
     fullText += pageText + '\n';
   }
   return {
-    text: fullText.slice(0, 12000),
+    text: fullText.slice(0, 12000), // limits text for API token cost constraints
     pageCount: pdf.numPages,
     wordCount: fullText.split(/\s+/).length
   };
@@ -316,7 +330,11 @@ export default function StudyMap() {
   }, []);
 
   const [screen, setScreen] = useState('upload'); // 'upload' | 'loading' | 'quiz' | 'results'
-    const [pdfjsReady, setPdfjsReady] = useState(false);
+  
+  // RESTORED API KEY LOGIC
+  const [apiKey, setApiKey] = useState('');
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [pdfjsReady, setPdfjsReady] = useState(false);
 
   const [uploadedFile, setUploadedFile] = useState(null);
   const [pdfText, setPdfText] = useState('');
@@ -325,7 +343,7 @@ export default function StudyMap() {
     questionCount: 10,
     difficulty: 'medium',
     mode: 'exam',
-    types: ['mcq', 'true_false', 'fill_blank', 'diagram']
+    types: ['mcq', 'true_false', 'fill_blank', 'short_answer', 'diagram']
   });
 
   const [questions, setQuestions] = useState([]);
@@ -351,104 +369,37 @@ export default function StudyMap() {
     document.head.appendChild(script);
   }, []);
 
+  // RESTORED REAL API CALL
   const callAnthropic = async (messages, systemPrompt, retries = 1) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (systemPrompt === SYSTEM_PROMPT) {
-          resolve(JSON.stringify({
-            "quiz_title": "Biology Cell Structure Demo",
-            "topics_covered": ["Cell Biology"],
-            "questions": [
-              {
-                "id": "q1",
-                "type": "mcq",
-                "topic_tag": "Cell Biology",
-                "difficulty": "easy",
-                "page_ref": "Page 1",
-                "question": "What is the powerhouse of the cell?",
-                "options": ["Nucleus", "Ribosome", "Mitochondria", "Golgi"],
-                "correct_answer": "Mitochondria",
-                "explanation": "Mitochondria generate most of the cell's supply of ATP, used as a source of chemical energy."
-              },
-              {
-                "id": "q2",
-                "type": "true_false",
-                "topic_tag": "Cell Biology",
-                "difficulty": "easy",
-                "page_ref": "Page 2",
-                "question": "Plant cells have a cell wall, but animal cells do not.",
-                "correct_answer": "true",
-                "explanation": "Plant cells have a rigid cell wall outside the plasma membrane, providing structural support."
-              },
-              {
-                "id": "q3",
-                "type": "fill_blank",
-                "topic_tag": "Cell Biology",
-                "difficulty": "medium",
-                "page_ref": "Page 3",
-                "sentence": "The ___ contains the genetic material of the cell.",
-                "correct_answer": "nucleus",
-                "explanation": "The nucleus is the control center of the cell containing DNA."
-              },
-              {
-                "id": "q4",
-                "type": "short_answer",
-                "topic_tag": "Cell Biology",
-                "difficulty": "hard",
-                "page_ref": "Page 4",
-                "question": "Explain the role of ribosomes.",
-                "model_answer": "Ribosomes are responsible for protein synthesis.",
-                "key_points": ["protein synthesis"],
-                "explanation": "Ribosomes read mRNA to synthesize proteins."
-              },
-              {
-                "id": "q5",
-                "type": "diagram",
-                "topic_tag": "Cell Biology",
-                "difficulty": "medium",
-                "page_ref": "Page 5",
-                "question": "Identify the cell organelles",
-                "diagram_type": "anatomy",
-                "diagram_title": "Cell Diagram",
-                "diagram_description": "Label the parts of the cell.",
-                "nodes": [
-                  { "id": "n1", "type": "process", "display_text": "Outer layer" },
-                  { "id": "n2", "type": "process", "display_text": "Energy center" }
-                ],
-                "drop_zones": [
-                  { "id": "z1", "node_id": "n1", "number": 1, "correct_chip_id": "c1" },
-                  { "id": "z2", "node_id": "n2", "number": 2, "correct_chip_id": "c2" }
-                ],
-                "answer_chips": [
-                  { "id": "c1", "label": "Cell Membrane", "correct_zone_id": "z1" },
-                  { "id": "c2", "label": "Mitochondria", "correct_zone_id": "z2" }
-                ],
-                "explanation": "The cell membrane is the outer layer, and mitochondria is the energy center."
-              }
-            ]
-          }));
-        } else if (systemPrompt === STUDY_PLAN_SYSTEM_PROMPT) {
-          resolve(JSON.stringify({
-            "summary": "Great job! You have a good understanding of basic cell structures.",
-            "study_priority": [
-              {
-                "topic": "Cell Biology",
-                "score_pct": 80,
-                "reason": "You did well, but can review advanced functions.",
-                "action": "Review cell metabolism chapters."
-              }
-            ]
-          }));
-        } else {
-          resolve(JSON.stringify({
-            "score_pct": 100,
-            "mentioned": ["protein synthesis"],
-            "missed": [],
-            "feedback": "Perfect answer."
-          }));
-        }
-      }, 3000);
-    });
+    if (!apiKey) throw new Error("Missing API Key");
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022', // Updated to latest claude 3.5 model
+          max_tokens: 4000,
+          system: systemPrompt,
+          messages: messages
+        })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'API error');
+      }
+      const data = await response.json();
+      return data.content[0].text;
+    } catch (err) {
+      if (retries > 0 && err.message.includes('parse')) {
+        return callAnthropic(messages, systemPrompt, retries - 1);
+      }
+      throw err;
+    }
   };
 
   const showError = (code, message) => {
@@ -469,8 +420,8 @@ export default function StudyMap() {
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
       {error && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '1rem' }} className="fade-in-up">
-          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '2px solid var(--wrong)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span><span style={{ fontWeight: 600 }}>✗</span> {error.message}</span>
+          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '1px solid var(--wrong-border)', color: '#FCA5A5', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backdropFilter: 'blur(10px)' }}>
+            <span><span style={{ fontWeight: 600, marginRight: 8 }}>✗</span> {error.message}</span>
             <button onClick={() => setError(null)} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 600 }}>✕</button>
           </div>
         </div>
@@ -478,7 +429,9 @@ export default function StudyMap() {
 
       {screen === 'upload' && (
         <UploadScreen
-                    pdfjsReady={pdfjsReady}
+          apiKey={apiKey} setApiKey={setApiKey}
+          apiKeyVisible={apiKeyVisible} setApiKeyVisible={setApiKeyVisible}
+          pdfjsReady={pdfjsReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
@@ -499,7 +452,7 @@ export default function StudyMap() {
               const raw = await callAnthropic([{ role: 'user', content: buildQuizPrompt(pdfText, config) }], SYSTEM_PROMPT);
               const parsed = parseJSON(raw);
               setQuestions(parsed.questions);
-              setQuizTitle(parsed.quiz_title);
+              setQuizTitle(parsed.quiz_title || "Generated Quiz");
               setStartTime(Date.now());
               setCurrentIndex(0);
               setAnswers({});
@@ -519,9 +472,10 @@ export default function StudyMap() {
 
       {screen === 'loading' && (
         <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="text-center">
-            <div style={{ width: 48, height: 48, borderRadius: 0, border: '4px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
-            <div style={{ color: 'var(--text-secondary)' }} className="fade-in">{loadingMessage}</div>
+          <div className="text-center card float" style={{ padding: '3rem', minWidth: '300px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 1s ease-in-out infinite', margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-glow)' }} />
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem' }} className="fade-in">{loadingMessage}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Powered by Claude 3.5 Sonnet</div>
           </div>
         </div>
       )}
@@ -536,7 +490,8 @@ export default function StudyMap() {
           quizTitle={quizTitle}
           startTime={startTime}
           config={config}
-                    callAnthropic={callAnthropic}
+          apiKey={apiKey}
+          callAnthropic={callAnthropic}
           showError={showError}
           onComplete={async () => {
             setScreen('results');
@@ -545,6 +500,7 @@ export default function StudyMap() {
               setStudyPlan(parseJSON(raw));
             } catch (err) {
               console.error(err);
+              showError('study_plan_error', 'Could not generate study recommendations.');
             }
           }}
         />
@@ -560,9 +516,7 @@ export default function StudyMap() {
           onRetryWrong={() => {
             const wrongTopics = Array.from(new Set(questions.filter(q => !answers[q.id]?.isCorrect && !answers[q.id]?.skipped).map(q => q.topic_tag)));
             if (wrongTopics.length === 0) return;
-            // Hacky retry: could generate a new quiz. For now just resets to quiz view with only wrong questions
-            // Real implemention should re-fetch.
-            resetQuiz(); setScreen('upload');
+            resetQuiz(); setScreen('upload'); // Hacky retry
           }}
         />
       )}
@@ -573,7 +527,7 @@ export default function StudyMap() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ apiKey, setApiKey, apiKeyVisible, setApiKeyVisible, pdfjsReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -602,49 +556,60 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
 
   return (
     <div className="container" style={{ padding: '4rem 1rem' }}>
-      <div className="card" style={{ maxWidth: 600, margin: '0 auto' }}>
+      <div className="card fade-in-up" style={{ maxWidth: 640, margin: '0 auto' }}>
         <div className="text-center mb-8">
-          <h1 style={{ fontSize: 28, color: 'var(--primary)' }}>StudyMap</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Turn your PDFs into exam-ready practice</p>
+          <h1 style={{ fontSize: 32, marginBottom: '0.5rem' }} className="text-gradient">StudyMap AI</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Transform documents into intelligent, interactive practice sessions.</p>
         </div>
 
-        
+        {/* RESTORED API KEY FIELD */}
+        <div className="mb-4">
+          <label htmlFor="apiKeyInput">Anthropic API Key</label>
+          <div style={{ position: 'relative' }}>
+            <input id="apiKeyInput" type={apiKeyVisible ? 'text' : 'password'} placeholder="sk-ant-..." value={apiKey} onChange={e => setApiKey(e.target.value)} />
+            <button aria-label="Toggle API Key visibility" style={{ position: 'absolute', right: 12, top: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }} onClick={() => setApiKeyVisible(!apiKeyVisible)}>
+              {apiKeyVisible ? '🙈' : '👁️'}
+            </button>
+            {apiKey.startsWith('sk-ant-') && <span style={{ position: 'absolute', right: 40, top: 12, background: 'var(--correct-bg)', color: 'var(--correct)', padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>✓ Valid format</span>}
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-hint)', marginTop: 4 }}>Stored locally in your browser. Requires a Claude 3.5 Sonnet capable key.</p>
+        </div>
 
         {!uploadedFile ? (
           <div className="mb-4">
             <div className="upload-zone"
-              style={{ border: `2px dashed ${isDragOver ? 'var(--primary)' : 'var(--drag-border)'}`, background: isDragOver ? 'var(--drag-hover)' : 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', minHeight: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease', animation: isDragOver ? 'pulse-border 1.5s infinite' : 'none' }}
+              style={{ border: \`2px dashed \${isDragOver ? 'var(--primary)' : 'var(--border)'}\`, background: isDragOver ? 'var(--primary-light)' : 'var(--bg-surface)', borderRadius: 'var(--radius-md)', minHeight: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s ease', animation: isDragOver ? 'pulseGlow 2s infinite' : 'none' }}
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
               onClick={() => fileInputRef.current?.click()}
             >
               <input type="file" accept=".pdf" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
-              <div style={{ color: 'var(--primary)', fontSize: 40 }}>☁️</div>
-              <p style={{ fontWeight: 500, marginTop: 8 }}>Drop your PDF here or click to browse</p>
-              <p style={{ color: 'var(--text-hint)', fontSize: 13 }}>Supports PDF up to 10MB</p>
+              <div style={{ color: 'var(--primary)', fontSize: 48, marginBottom: 12, filter: 'drop-shadow(0 0 10px rgba(99,102,241,0.5))' }}>📄</div>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Drop your PDF here to begin</p>
+              <p style={{ color: 'var(--text-hint)', fontSize: 13, marginTop: 4 }}>Supports PDF files up to 10MB</p>
             </div>
           </div>
         ) : (
           <div className="fade-in-up mb-8">
-            <div className="flex items-center gap-2 mb-4" style={{ background: 'var(--correct-bg)', padding: '12px', borderRadius: 'var(--radius-md)', border: '2px solid var(--correct)' }}>
-              <span style={{ color: 'var(--correct)' }}>✓</span>
+            <div className="flex items-center gap-4 mb-6" style={{ background: 'var(--correct-bg)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--correct-border)' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--correct)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>✓</div>
               <div>
-                <div style={{ fontWeight: 600 }}>{uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)</div>
-                {pdfText && <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{pdfMeta.pageCount} pages · {pdfMeta.wordCount} words extracted</div>}
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)</div>
+                {pdfText && <div style={{ fontSize: 13, color: 'var(--correct)' }}>{pdfMeta.pageCount} pages · {pdfMeta.wordCount} words extracted</div>}
               </div>
             </div>
 
-            <div className="grid-2 mb-4">
+            <div className="grid-2 mb-6">
               <div>
-                <label>Number of Questions: {config.questionCount}</label>
-                <input type="range" min={5} max={30} step={1} value={config.questionCount} onChange={e => setConfig({ ...config, questionCount: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--primary)' }} />
+                <label>Questions: <span style={{ color: 'var(--primary)' }}>{config.questionCount}</span></label>
+                <input type="range" min={5} max={30} step={1} value={config.questionCount} onChange={e => setConfig({ ...config, questionCount: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--primary)', height: 6 }} />
               </div>
               <div>
                 <label>Difficulty</label>
-                <div className="flex" style={{ border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                <div className="flex" style={{ background: 'var(--bg-surface)', padding: 4, borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                   {['easy', 'medium', 'hard'].map(lvl => (
-                    <button key={lvl} className={config.difficulty === lvl ? 'btn-primary' : 'btn-outline'} style={{ flex: 1, borderRadius: 0, border: 'none', height: 36, fontSize: 13, textTransform: 'capitalize', background: config.difficulty === lvl ? 'var(--primary)' : 'transparent', color: config.difficulty === lvl ? 'white' : 'var(--text-primary)' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
+                    <button key={lvl} className={config.difficulty === lvl ? 'btn-primary' : ''} style={{ flex: 1, borderRadius: 'var(--radius-sm)', border: 'none', height: 32, fontSize: 13, textTransform: 'capitalize', background: config.difficulty === lvl ? 'var(--primary)' : 'transparent', color: config.difficulty === lvl ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
                       {lvl}
                     </button>
                   ))}
@@ -652,42 +617,39 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
               </div>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <label>Mode</label>
               <div className="flex gap-2">
-                <button className={`btn ${config.mode === 'exam' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>Exam Mode</button>
-                <button className={`btn ${config.mode === 'interview' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>Interview Mode</button>
+                <button className={\`btn \${config.mode === 'exam' ? 'btn-primary' : 'btn-outline'}\`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'exam' })}>📝 Exam Mode</button>
+                <button className={\`btn \${config.mode === 'interview' ? 'btn-primary' : 'btn-outline'}\`} style={{ flex: 1 }} onClick={() => setConfig({ ...config, mode: 'interview' })}>💬 Interview Mode</button>
               </div>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-8">
               <label>Question Types</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {[
                   { id: 'mcq', label: 'Multiple Choice' },
                   { id: 'true_false', label: 'True / False' },
                   { id: 'fill_blank', label: 'Fill in the Blank' },
-                  { id: 'short_answer', label: 'Short Answer / Explain' },
-                  { id: 'diagram', label: 'Diagram & Flowchart (drag-and-drop)' }
+                  { id: 'short_answer', label: 'Short Answer' },
+                  { id: 'diagram', label: 'Diagrams & Flowcharts' }
                 ].map(t => {
                   const active = config.types.includes(t.id);
                   return (
-                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '6px 12px', borderRadius: 0, border: `2px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--drag-idle)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                      {t.label}
+                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: \`1px solid \${active ? 'var(--primary)' : 'var(--border)'}\`, background: active ? 'var(--primary-light)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: active ? 'var(--shadow-glow)' : 'none' }}>
+                      {active ? '✓ ' : ''}{t.label}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            <button className="btn btn-primary w-full" style={{ height: 48, fontSize: 16 }} disabled={!pdfText || config.types.length === 0} onClick={onGenerate}>
-              Generate Quiz →
+            <button className="btn btn-primary w-full" style={{ height: 56, fontSize: 16, fontWeight: 700 }} disabled={!pdfText || !apiKey || config.types.length === 0} onClick={onGenerate}>
+              Generate Study Session ⚡
             </button>
           </div>
         )}
-        <p style={{ fontSize: 12, color: 'var(--text-hint)', textAlign: 'center', marginTop: '1rem' }}>
-          Your PDF is read locally in your browser and never uploaded to any server.
-        </p>
       </div>
     </div>
   );
@@ -723,7 +685,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
-      onComplete();
+      onComplete(); // TRIGGERS RESULTS SCREEN
     }
   };
 
@@ -735,36 +697,35 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 
   return (
     <div>
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg-card)', borderBottom: '2px solid var(--border)', padding: '0.75rem 0' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(9, 10, 15, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)', padding: '1rem 0' }}>
         <div className="container flex justify-between items-center">
-          <div style={{ fontWeight: 600, color: 'var(--primary)' }}>StudyMap</div>
-          <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Question {currentIndex + 1} of {questions.length}</div>
+          <div style={{ fontWeight: 700, fontSize: 18 }} className="text-gradient">StudyMap AI</div>
+          <div style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, background: 'var(--bg-surface)', padding: '4px 12px', borderRadius: 'var(--radius-pill)' }}>Question {currentIndex + 1} of {questions.length}</div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ fontSize: 14 }}>
-              <span style={{ color: 'var(--correct)', fontWeight: 600 }}>{correctCount} ✓</span>{' '}
-              <span style={{ color: 'var(--wrong)', fontWeight: 600 }}>{wrongCount} ✗</span>
+            <div style={{ fontSize: 14, display: 'flex', gap: 12 }}>
+              <span style={{ color: 'var(--correct)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--correct)', boxShadow: '0 0 8px var(--correct)'}}/> {correctCount}</span>
+              <span style={{ color: 'var(--wrong)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{width: 8, height: 8, borderRadius: '50%', background: 'var(--wrong)', boxShadow: '0 0 8px var(--wrong)'}}/> {wrongCount}</span>
             </div>
             {config.mode === 'exam' && (
-              <div style={{ fontFamily: 'JetBrains Mono', fontSize: 14 }}>
+              <div className="mono" style={{ fontSize: 14, background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: 6 }}>
                 {Math.floor(elapsed / 60).toString().padStart(2, '0')}:{(elapsed % 60).toString().padStart(2, '0')}
               </div>
             )}
           </div>
         </div>
-        <div style={{ width: '100%', height: 4, background: 'var(--border)', marginTop: '0.75rem' }}>
-          <div style={{ width: `${progress}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.4s ease' }} role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={questions.length} />
+        <div style={{ width: '100%', height: 2, background: 'var(--border)', marginTop: '1rem', position: 'absolute', bottom: 0, left: 0 }}>
+          <div style={{ width: \`\${progress}%\`, height: '100%', background: 'var(--gradient-main)', transition: 'width 0.4s ease', boxShadow: 'var(--shadow-glow)' }} role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={questions.length} />
         </div>
       </div>
 
-      <div className="container" style={{ padding: '2rem 1rem' }}>
-        <div className="card slide-in-right" key={q.id} style={{ maxWidth: 680, margin: '0 auto' }}>
-          <div className="flex justify-between items-center mb-4">
-            <span style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 0, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{q.topic_tag}</span>
-            <span style={{ background: q.difficulty === 'easy' ? 'var(--correct-bg)' : q.difficulty === 'medium' ? 'var(--partial-bg)' : 'var(--wrong-bg)', color: q.difficulty === 'easy' ? 'var(--text-primary)' : q.difficulty === 'medium' ? 'var(--text-primary)' : 'var(--text-primary)', borderRadius: 0, padding: '4px 12px', fontSize: 12 }}>{q.difficulty}</span>
+      <div className="container" style={{ padding: '3rem 1rem' }}>
+        <div className="card slide-in-right" key={q.id} style={{ maxWidth: 720, margin: '0 auto', borderTop: '4px solid var(--primary)' }}>
+          <div className="flex justify-between items-center mb-6">
+            <span style={{ background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-pill)', padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>{q.topic_tag}</span>
+            <span style={{ background: q.difficulty === 'easy' ? 'var(--correct-bg)' : q.difficulty === 'medium' ? 'var(--partial-bg)' : 'var(--wrong-bg)', color: q.difficulty === 'easy' ? 'var(--correct)' : q.difficulty === 'medium' ? 'var(--partial)' : 'var(--wrong)', borderRadius: 'var(--radius-pill)', padding: '4px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase' }}>{q.difficulty}</span>
           </div>
 
-          <div style={{ color: 'var(--text-hint)', fontSize: 13, marginBottom: 8 }}>Q{currentIndex + 1}</div>
-          <h2 style={{ fontSize: 18, fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '1.5rem' }}>{q.question}</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '2rem' }}>{q.question}</h2>
 
           {q.type === 'mcq' && <MCQQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'true_false' && <TrueFalseQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
@@ -774,15 +735,15 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 
           {qSubmitted && (
             <div className="fade-in-up mt-8">
-              <button className="btn btn-primary w-full" onClick={goToNextQuestion}>
-                {currentIndex < questions.length - 1 ? 'Next Question →' : 'View Results'}
+              <button className="btn btn-primary w-full" onClick={goToNextQuestion} style={{ height: 56, fontSize: 16 }}>
+                {currentIndex < questions.length - 1 ? 'Next Question →' : 'View Final Results 🏆'}
               </button>
             </div>
           )}
 
           {!qSubmitted && (
-            <div className="text-center mt-4">
-              <button onClick={markSkipped} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Skip this question</button>
+            <div className="text-center mt-6">
+              <button onClick={markSkipped} style={{ background: 'none', border: 'none', color: 'var(--text-hint)', fontSize: 13, cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = 'var(--text-primary)'} onMouseLeave={e => e.target.style.color = 'var(--text-hint)'}>Press here to skip this question</button>
             </div>
           )}
         </div>
@@ -798,13 +759,14 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 function ExplanationBox({ question, isCorrect, partialScore, isPartial }) {
   const correct = isCorrect || (isPartial && partialScore === 100);
   const colorVar = correct ? '--correct' : isPartial ? '--partial' : '--wrong';
+  const bgVar = correct ? '--correct-bg' : isPartial ? '--partial-bg' : '--wrong-bg';
   return (
-    <div style={{ maxHeight: 500, overflow: 'hidden', transition: 'max-height 0.35s ease', marginTop: '1rem', padding: '1rem 1.25rem', background: 'var(--bg-surface)', borderLeft: `3px solid var(${colorVar})`, borderRadius: 'var(--radius-md)' }} className="fade-in-up">
-      <div style={{ color: `var(${colorVar})`, fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
-        {correct ? '✓ Correct!' : isPartial ? `${partialScore} Correct` : '✗ Incorrect'}
+    <div style={{ maxHeight: 500, overflow: 'hidden', transition: 'max-height 0.35s ease', marginTop: '1.5rem', padding: '1.5rem', background: \`var(\${bgVar})\`, border: \`1px solid var(\${colorVar})\`, borderRadius: 'var(--radius-md)' }} className="fade-in-up">
+      <div style={{ color: \`var(\${colorVar})\`, fontWeight: 700, fontSize: 16, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        {correct ? '✓ Correct!' : isPartial ? \`\${partialScore} Correct\` : '✗ Incorrect'}
       </div>
-      <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{question.explanation}</p>
-      {question.page_ref && <p style={{ fontSize: 12, color: 'var(--text-hint)', fontStyle: 'italic', marginTop: 6 }}>— {question.page_ref}</p>}
+      <p style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.6 }}>{question.explanation}</p>
+      {question.page_ref && <p style={{ fontSize: 12, color: 'var(--text-hint)', fontStyle: 'italic', marginTop: 12, opacity: 0.8 }}>Source: {question.page_ref}</p>}
     </div>
   );
 }
@@ -817,30 +779,34 @@ function MCQQuestion({ question, submitted, answer, onAnswer }) {
     setSelected(opt);
     setTimeout(() => {
       onAnswer({ value: opt, isCorrect: opt === question.correct_answer });
-    }, 300);
+    }, 400); // slightly longer delay for the selection animation to play
   };
 
   return (
     <div>
       {question.options.map(opt => {
-        let style = { padding: '12px 16px', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', marginBottom: 8, transition: 'all 0.2s ease' };
-        let icon = null;
+        let style = { padding: '16px 20px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', marginBottom: 12, transition: 'all 0.2s ease', display: 'flex', alignItems: 'center' };
+        let icon = <div style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px solid var(--text-hint)', marginRight: 16, transition: 'all 0.2s ease', flexShrink: 0 }} />;
+        
         if (submitted) {
           if (opt === question.correct_answer) {
-            style.background = 'var(--correct-bg)'; style.borderColor = 'var(--correct)'; style.animation = 'correctFlash 0.5s ease forwards';
-            icon = <span style={{ color: 'var(--correct)', marginRight: 8, fontWeight: 600 }}>✓</span>;
+            style.background = 'var(--correct-bg)'; style.borderColor = 'var(--correct)'; style.boxShadow = '0 0 15px rgba(34,197,94,0.1)';
+            icon = <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--correct)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 16 }}>✓</div>;
           } else if (opt === answer.value) {
             style.background = 'var(--wrong-bg)'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease';
-            icon = <span style={{ color: 'var(--wrong)', marginRight: 8, fontWeight: 600 }}>✗</span>;
+            icon = <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--wrong)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 16 }}>✗</div>;
           } else {
-            style.opacity = 0.5;
+            style.opacity = 0.4;
           }
         } else {
-          if (selected === opt) { style.borderColor = 'var(--primary)'; style.background = 'var(--drag-idle)'; style.boxShadow = '0 0 0 3px rgba(255,255,255,0.1)'; }
+          if (selected === opt) { 
+            style.borderColor = 'var(--primary)'; style.background = 'var(--primary-light)'; style.boxShadow = 'var(--shadow-glow)';
+            icon = <div style={{ width: 20, height: 20, borderRadius: '50%', border: '6px solid var(--primary)', marginRight: 16 }} />;
+          }
         }
         return (
-          <div key={opt} style={style} onClick={() => handleClick(opt)} onMouseEnter={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--primary)'; e.currentTarget.style.background='var(--drag-idle)'; } }} onMouseLeave={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg-surface)'; } }}>
-            {icon}{opt}
+          <div key={opt} style={style} onClick={() => handleClick(opt)} onMouseEnter={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--primary)'; e.currentTarget.style.background='var(--bg-elevated)'; } }} onMouseLeave={e => { if(!submitted && selected !== opt) { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.background='var(--bg-surface)'; } }}>
+            {icon}<span style={{ fontWeight: 500, fontSize: 15 }}>{opt}</span>
           </div>
         );
       })}
@@ -858,13 +824,13 @@ function TrueFalseQuestion({ question, submitted, answer, onAnswer }) {
     <div>
       <div className="grid-2">
         {['True', 'False'].map(opt => {
-          let style = { height: 52, flex: 1, fontSize: 16, fontWeight: 500, borderRadius: 'var(--radius-md)', border: '2px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' };
+          let style = { height: 64, flex: 1, fontSize: 18, fontWeight: 600, borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' };
           if (submitted) {
-            if (opt.toLowerCase() === question.correct_answer.toString().toLowerCase()) { style.background = 'var(--correct)'; style.color = 'white'; style.borderColor = 'var(--correct)'; }
-            else if (opt === answer.value) { style.background = 'var(--wrong)'; style.color = 'white'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease'; }
-            else { style.opacity = 0.5; }
+            if (opt.toLowerCase() === question.correct_answer.toString().toLowerCase()) { style.background = 'var(--correct-bg)'; style.color = 'var(--correct)'; style.borderColor = 'var(--correct)'; style.boxShadow = '0 0 15px rgba(34,197,94,0.15)'; }
+            else if (opt === answer.value) { style.background = 'var(--wrong-bg)'; style.color = 'var(--wrong)'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease'; }
+            else { style.opacity = 0.3; }
           }
-          return <button key={opt} style={style} onClick={() => handleClick(opt)}>{opt}</button>;
+          return <button key={opt} style={style} onClick={() => handleClick(opt)} onMouseEnter={e => { if(!submitted) { e.currentTarget.style.background='var(--bg-elevated)'; e.currentTarget.style.borderColor='var(--primary)'; } }} onMouseLeave={e => { if(!submitted) { e.currentTarget.style.background='var(--bg-surface)'; e.currentTarget.style.borderColor='var(--border)'; } }}>{opt}</button>;
         })}
       </div>
       {submitted && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
@@ -880,27 +846,27 @@ function FillBlankQuestion({ question, submitted, answer, onAnswer }) {
   };
   return (
     <div>
-      <p style={{ fontSize: 16, lineHeight: 1.8, marginBottom: '1.5rem' }}>
+      <p style={{ fontSize: 18, lineHeight: 1.8, marginBottom: '2rem', color: 'var(--text-primary)' }}>
         {question.sentence.split('___').map((part, i, arr) => (
           <React.Fragment key={i}>
             {part}
             {i < arr.length - 1 && (
-              <span style={{ display: 'inline-block', minWidth: 120, borderBottom: '2px solid var(--primary)', margin: '0 4px', textAlign: 'center', color: submitted ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'inherit', fontWeight: 600 }}>
-                {submitted ? answer.value : '______'}
+              <span style={{ display: 'inline-block', minWidth: 140, borderBottom: '3px solid var(--primary)', margin: '0 8px', padding: '0 8px', textAlign: 'center', color: submitted ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'var(--primary)', fontWeight: 700, background: 'var(--bg-surface)', borderRadius: '4px 4px 0 0' }}>
+                {submitted ? answer.value : ' '}
               </span>
             )}
           </React.Fragment>
         ))}
       </p>
       {!submitted && (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input type="text" className="mono" value={val} onChange={e => setVal(e.target.value)} placeholder="Type your answer" onKeyDown={e => e.key === 'Enter' && submit()} />
-          <button className="btn btn-primary" onClick={submit}>Check</button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <input type="text" className="mono" value={val} onChange={e => setVal(e.target.value)} placeholder="Type your answer" onKeyDown={e => e.key === 'Enter' && submit()} style={{ fontSize: 16 }} />
+          <button className="btn btn-primary" onClick={submit} style={{ padding: '0 2rem' }}>Check</button>
         </div>
       )}
       {submitted && !answer.skipped && !answer.isCorrect && (
-        <div style={{ marginTop: '1rem', color: 'var(--wrong)' }}>
-          <span style={{ fontWeight: 600 }}>✗ Incorrect.</span> Correct answer: <span style={{ color: 'var(--correct)', fontWeight: 600 }}>{question.correct_answer}</span>
+        <div style={{ marginTop: '1rem', color: 'var(--wrong)', background: 'var(--wrong-bg)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--wrong-border)' }}>
+          <span style={{ fontWeight: 600 }}>✗ Incorrect.</span> Correct answer: <span style={{ color: 'var(--text-primary)', fontWeight: 700, background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 4, marginLeft: 8 }}>{question.correct_answer}</span>
         </div>
       )}
       {submitted && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
@@ -921,7 +887,7 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
       const evalData = parseJSON(raw);
       onAnswer({ value: val, isCorrect: evalData.score_pct >= 70, score: evalData.score_pct, mentioned: evalData.mentioned, missed: evalData.missed, feedback: evalData.feedback });
     } catch (e) {
-      alert('Evaluation failed');
+      alert('Evaluation failed. Please try again.');
     }
     setLoading(false);
   };
@@ -930,24 +896,35 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
     <div>
       {!submitted ? (
         <div>
-          <textarea value={val} onChange={e => setVal(e.target.value)} placeholder="Explain your answer..." />
-          <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--text-hint)', marginTop: 4, marginBottom: 16 }}>{wordCount} words</div>
-          <button className="btn btn-primary w-full" onClick={submit} disabled={loading}>{loading ? 'Evaluating...' : 'Submit Answer'}</button>
+          <textarea value={val} onChange={e => setVal(e.target.value)} placeholder="Type your comprehensive explanation here..." style={{ fontSize: 15, lineHeight: 1.6 }} />
+          <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--text-hint)', marginTop: 8, marginBottom: 20 }}>{wordCount} words</div>
+          <button className="btn btn-primary w-full" onClick={submit} disabled={loading} style={{ height: 56 }}>
+            {loading ? <span style={{display: 'flex', alignItems: 'center', gap: 8}}><div style={{width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite'}}/> Evaluating Answer...</span> : 'Submit Answer'}
+          </button>
         </div>
       ) : (
         answer.skipped ? <p>Skipped</p> : (
-          <div>
-            <div style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--border)' }}>
-              <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>{answer.score}% Match</div>
-              <ul style={{ listStyle: 'none', marginBottom: 16 }}>
-                {answer.mentioned?.map((m, i) => <li key={i} style={{ color: 'var(--correct)', fontSize: 14, marginBottom: 4 }}>✓ {m}</li>)}
-                {answer.missed?.map((m, i) => <li key={i} style={{ color: 'var(--wrong)', fontSize: 14, marginBottom: 4 }}>✗ {m}</li>)}
+          <div className="fade-in-up">
+            <div style={{ background: 'var(--bg-surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                <div style={{ width: 60, height: 60, borderRadius: '50%', background: answer.isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)', border: \`2px solid \${answer.isCorrect ? 'var(--correct)' : 'var(--wrong)'}\`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: answer.isCorrect ? 'var(--correct)' : 'var(--wrong)' }}>
+                  {answer.score}%
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{answer.isCorrect ? 'Good Comprehension' : 'Needs Review'}</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>AI Evaluation Score</div>
+                </div>
+              </div>
+              
+              <ul style={{ listStyle: 'none', marginBottom: 20, background: 'var(--bg-page)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                {answer.mentioned?.map((m, i) => <li key={\`m-\${i}\`} style={{ color: 'var(--correct)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✓</span> <span>You mentioned: {m}</span></li>)}
+                {answer.missed?.map((m, i) => <li key={\`x-\${i}\`} style={{ color: 'var(--wrong)', fontSize: 14, marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 8 }}><span style={{fontWeight: 700}}>✗</span> <span>You missed: {m}</span></li>)}
               </ul>
-              <p style={{ fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: 14 }}>{answer.feedback}</p>
+              <p style={{ fontStyle: 'italic', color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.6, borderLeft: '3px solid var(--primary)', paddingLeft: 12 }}>{answer.feedback}</p>
             </div>
-            <details style={{ marginTop: '1rem', cursor: 'pointer' }}>
-              <summary style={{ fontWeight: 600, color: 'var(--primary)' }}>Show Model Answer</summary>
-              <p style={{ marginTop: 8, padding: '1rem', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', fontSize: 14, color: 'var(--text-secondary)' }}>{question.model_answer}</p>
+            <details style={{ marginTop: '1.5rem', cursor: 'pointer', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+              <summary style={{ fontWeight: 600, color: 'var(--text-primary)', padding: '1rem', outline: 'none' }}>View Ideal Model Answer</summary>
+              <div style={{ padding: '0 1rem 1rem 1rem', fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{question.model_answer}</div>
             </details>
           </div>
         )
@@ -964,7 +941,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
   const [zoneResults, setZoneResults] = useState([]);
 
   useEffect(() => {
-    if (!submitted) {
+    if (!submitted && question.answer_chips) {
       setChipBank(shuffle(question.answer_chips).map(c => ({ ...c, placedInZoneId: null })));
       setDropZones(question.drop_zones.map(z => ({ ...z, placedChipId: null })));
       setZoneResults([]);
@@ -1048,41 +1025,35 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
 
   const placed = dropZones.filter(z => z.placedChipId).length;
   const total = dropZones.length;
-  const allFilled = placed === total;
+  const allFilled = placed === total && total > 0;
 
   return (
     <div>
       <div className="diagram-layout">
         <div>
-          <h3 style={{ fontSize: 14, fontWeight: 600 }}>Answer Bank</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>{isMobile ? "Tap a label, then tap where it belongs" : "Drag each label to its correct position"}</p>
-          <div style={{ fontSize: 13, color: allFilled ? 'var(--correct)' : 'var(--text-secondary)' }}>{placed} of {total} labels placed</div>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Label Bank</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>{isMobile ? "Tap a label, then tap a drop zone" : "Drag each label to the correct zone"}</p>
+          <div style={{ fontSize: 13, color: allFilled ? 'var(--correct)' : 'var(--text-hint)', fontWeight: 600 }}>{placed} / {total} Placed</div>
           
-          {isMobile && !submitted && (
-            <div style={{ background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--text-primary)', marginBottom: 12, marginTop: 8 }}>
-              Tap a label → tap where it belongs
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 12 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, paddingTop: 16 }}>
             {(submitted && answer?.chipBank ? answer.chipBank : chipBank).map(chip => {
               const isUsed = chip.placedInZoneId !== null;
               const isSelected = chip.id === selectedChipId;
               const isDragging = dragState.draggingChipId === chip.id;
               
-              let style = { padding: '8px 16px', borderRadius: 0, border: '2px solid var(--drag-border)', background: 'var(--drag-idle)', color: 'var(--primary)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.15s ease', boxShadow: 'var(--shadow-sm)', opacity: 1 };
+              let style = { padding: '8px 16px', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.2s ease', boxShadow: '0 2px 5px rgba(0,0,0,0.2)', opacity: 1 };
               
-              if (isUsed) { style.background = 'var(--bg-surface)'; style.borderColor = 'var(--border)'; style.color = 'var(--text-hint)'; style.opacity = 0.55; style.pointerEvents = 'none'; }
-              else if (isSelected) { style.borderColor = 'var(--primary-hover)'; style.background = '#EFF6FF'; style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; }
-              else if (isDragging) { style.opacity = 0.4; style.cursor = 'grabbing'; }
+              if (isUsed) { style.background = 'var(--bg-page)'; style.borderColor = 'transparent'; style.color = 'var(--text-hint)'; style.opacity = 0.4; style.pointerEvents = 'none'; style.boxShadow = 'none'; }
+              else if (isSelected) { style.borderColor = 'var(--primary)'; style.background = 'var(--primary-light)'; style.boxShadow = 'var(--shadow-glow)'; }
+              else if (isDragging) { style.opacity = 0.5; style.transform = 'scale(0.95)'; }
               
               return (
-                <div key={chip.id} style={style} draggable={!isUsed && !submitted && !isMobile} role="button" aria-grabbed={isDragging} aria-label={`Drag chip: ${chip.label}`}
+                <div key={chip.id} style={style} draggable={!isUsed && !submitted && !isMobile} role="button" aria-grabbed={isDragging} aria-label={\`Drag chip: \${chip.label}\`}
                   onDragStart={(e) => !isMobile && handleChipDragStart(e, chip.id, 'bank')}
                   onDragEnd={() => setDragState({ draggingChipId: null, overZoneId: null })}
                   onClick={() => isMobile && !isUsed && !submitted && handleChipTap(chip.id)}
-                  onMouseEnter={e => { if(!isUsed && !submitted && !isSelected && !isDragging) { e.currentTarget.style.background='var(--drag-hover)'; e.currentTarget.style.transform='scale(1.02)'; e.currentTarget.style.boxShadow='var(--shadow-md)'; } }}
-                  onMouseLeave={e => { if(!isUsed && !submitted && !isSelected && !isDragging) { e.currentTarget.style.background='var(--drag-idle)'; e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='var(--shadow-sm)'; } }}
+                  onMouseEnter={e => { if(!isUsed && !submitted && !isSelected && !isDragging) { e.currentTarget.style.background='var(--drag-hover)'; e.currentTarget.style.borderColor='var(--text-hint)'; } }}
+                  onMouseLeave={e => { if(!isUsed && !submitted && !isSelected && !isDragging) { e.currentTarget.style.background='var(--bg-surface)'; e.currentTarget.style.borderColor='var(--border)'; } }}
                 >
                   {chip.label}
                 </div>
@@ -1092,10 +1063,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
         </div>
 
         <div>
-          <h3 style={{ fontSize: 16 }}>{question.diagram_title}</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{question.diagram_description}</p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-surface)', padding: '2rem 1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--border)', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-page)', padding: '3rem 1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflowX: 'auto', boxShadow: 'inset 0 5px 15px rgba(0,0,0,0.3)' }}>
             {question.nodes && question.nodes.map((node, i) => {
               const zoneDef = question.drop_zones.find(z => z.node_id === node.id);
               const activeZone = (submitted && answer?.dropZones ? answer.dropZones : dropZones).find(z => z.nodeId === node.id || z.node_id === node.id);
@@ -1104,30 +1072,30 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               let DropZoneCmp = null;
               if (activeZone) {
                 const filledChip = (submitted && answer?.chipBank ? answer.chipBank : chipBank).find(c => c.id === activeZone.placedChipId);
-                let style = { minWidth: 110, height: 38, border: '2px dashed var(--drag-border)', background: 'var(--drop-empty)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--text-hint)', position: 'relative', transition: 'all 0.15s ease' };
-                let content = `① Drop here`.replace('1', activeZone.number || i+1);
+                let style = { minWidth: 140, height: 44, border: '2px dashed var(--border-strong)', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'var(--text-hint)', position: 'relative', transition: 'all 0.2s ease' };
+                let content = \`Zone \${activeZone.number || i+1}\`;
                 
-                if (dragState.overZoneId === activeZone.id) {
-                  style.border = '2px solid var(--primary)'; style.background = 'var(--drop-active)'; style.animation = 'pulse-border 1s infinite';
+                if (dragState.overZoneId === activeZone.id || (isMobile && selectedChipId)) {
+                  style.border = '2px solid var(--primary)'; style.background = 'var(--primary-light)'; style.boxShadow = 'var(--shadow-glow)';
                 } else if (filledChip && !submitted) {
-                  style.border = '2px solid var(--drag-border)'; style.background = 'var(--drop-filled)'; style.color = 'var(--primary)'; style.fontFamily = "'JetBrains Mono', monospace"; style.fontSize = 13;
+                  style.border = '2px solid var(--primary)'; style.background = 'var(--bg-card)'; style.color = 'var(--text-primary)'; style.fontFamily = "'JetBrains Mono', monospace"; style.fontWeight = 600;
                   content = filledChip.label;
                 } else if (submitted && zr) {
-                  style.fontFamily = "'JetBrains Mono', monospace"; style.fontSize = 13; style.borderStyle = 'solid';
-                  if (zr.isCorrect) { style.borderColor = 'var(--correct)'; style.background = 'var(--drag-correct)'; style.color = 'var(--text-primary)'; content = `✓ ${zr.placedLabel}`; }
-                  else { style.borderColor = 'var(--wrong)'; style.background = 'var(--drag-wrong)'; style.color = 'var(--text-primary)'; content = `✗ ${zr.placedLabel || 'Empty'}`; }
+                  style.fontFamily = "'JetBrains Mono', monospace"; style.fontWeight = 600; style.borderStyle = 'solid';
+                  if (zr.isCorrect) { style.borderColor = 'var(--correct)'; style.background = 'var(--correct-bg)'; style.color = 'var(--correct)'; content = zr.placedLabel; }
+                  else { style.borderColor = 'var(--wrong)'; style.background = 'var(--wrong-bg)'; style.color = 'var(--wrong)'; content = zr.placedLabel || 'Empty'; }
                 }
 
                 DropZoneCmp = (
-                  <div style={style} role="listitem" aria-label={`Drop zone ${activeZone.number}: ${filledChip ? filledChip.label : 'empty'}`}
+                  <div style={style} role="listitem" aria-label={\`Drop zone \${activeZone.number}: \${filledChip ? filledChip.label : 'empty'}\`}
                     onDragOver={e => { if(!submitted && !isMobile){ e.preventDefault(); setDragState(prev => ({...prev, overZoneId: activeZone.id})); } }}
                     onDragLeave={() => !submitted && setDragState(prev => ({...prev, overZoneId: null}))}
                     onDrop={e => { if(!submitted && !isMobile) handleDrop(e, activeZone.id); }}
                     onClick={() => { if(!submitted && isMobile) handleZoneTap(activeZone.id); }}
                   >
                     {content}
-                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: 0, background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
-                    {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 2, fontWeight: 600 }}>{zr.correctLabel}</div>}
+                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -10, right: -10, width: 22, height: 22, borderRadius: '50%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
+                    {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 4, fontWeight: 700 }}>{zr.correctLabel}</div>}
                   </div>
                 );
               }
@@ -1135,23 +1103,23 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               return (
                 <React.Fragment key={node.id}>
                   {node.type === 'start' || node.type === 'end' ? (
-                    <div style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 0, padding: '8px 20px', fontSize: 13, fontWeight: 500 }}>
+                    <div style={{ background: 'var(--gradient-main)', color: 'white', borderRadius: 'var(--radius-pill)', padding: '10px 24px', fontSize: 14, fontWeight: 600, boxShadow: 'var(--shadow-md)' }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   ) : node.type === 'decision' ? (
-                    <div style={{ width: 110, height: 110, transform: 'rotate(45deg)', background: 'var(--bg-surface)', border: '2px solid var(--partial)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ transform: 'rotate(-45deg)', padding: 8, fontSize: 12, textAlign: 'center' }}>
+                    <div style={{ width: 130, height: 130, transform: 'rotate(45deg)', background: 'var(--bg-card)', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, boxShadow: 'var(--shadow-md)' }}>
+                      <div style={{ transform: 'rotate(-45deg)', padding: 12, fontSize: 13, textAlign: 'center', fontWeight: 600 }}>
                         {DropZoneCmp || node.display_text}
                       </div>
                     </div>
                   ) : (
-                    <div style={{ background: 'var(--bg-card)', border: '2px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 16px', minWidth: 140, textAlign: 'center', fontSize: 13 }}>
+                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 20px', minWidth: 160, textAlign: 'center', fontSize: 14, fontWeight: 500, boxShadow: 'var(--shadow-md)' }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   )}
                   {i < question.nodes.length - 1 && (
-                    <div style={{ width: 2, height: 28, background: 'var(--border)', margin: '0 auto', position: 'relative' }}>
-                      <div style={{ position: 'absolute', bottom: -6, left: -4, width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid var(--border)' }} />
+                    <div style={{ width: 2, height: 36, background: 'var(--border-strong)', margin: '0 auto', position: 'relative' }}>
+                      <div style={{ position: 'absolute', bottom: -6, left: -5, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid var(--border-strong)' }} />
                     </div>
                   )}
                 </React.Fragment>
@@ -1163,17 +1131,13 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
 
       {!submitted && (
         <div className="mt-8">
-          <button className="btn btn-primary w-full" disabled={!allFilled} onClick={submit}>Check Answers ({placed}/{total} placed)</button>
-          {!allFilled && <div style={{ fontSize: 13, color: 'var(--text-hint)', textAlign: 'center', marginTop: 8 }}>Place {total - placed} more label(s) to continue</div>}
+          <button className="btn btn-primary w-full" disabled={!allFilled} onClick={submit} style={{ height: 56, fontSize: 16 }}>Check Answer ({placed}/{total} Placed)</button>
         </div>
       )}
       
       {submitted && !answer.skipped && (
         <div className="fade-in-up mt-8">
-          <div style={{ fontSize: 16, fontWeight: 600, color: answer.score === answer.total ? 'var(--correct)' : answer.score > answer.total / 2 ? 'var(--partial)' : 'var(--wrong)', textAlign: 'center', marginBottom: 16 }}>
-            You got {answer.score} out of {answer.total} labels correct {answer.score === answer.total && '✓'}
-          </div>
-          <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={`${answer.score}/${answer.total}`} />
+          <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={\`\${answer.score}/\${answer.total}\`} />
         </div>
       )}
     </div>
@@ -1201,12 +1165,13 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
   useEffect(() => {
     setTimeout(() => {
       setOffset(408 - (scorePct / 100 * 408));
-    }, 100);
+    }, 300);
   }, [scorePct]);
 
-  let msg = "Needs significant work.";
-  if (scorePct >= 50) msg = "Getting there.";
-  if (scorePct >= 80) msg = "Excellent! You're exam-ready.";
+  let msg = "Keep Practicing!";
+  let grad = "linear-gradient(135deg, #EF4444 0%, #F59E0B 100%)";
+  if (scorePct >= 50) { msg = "Solid Effort!"; grad = "linear-gradient(135deg, #F59E0B 0%, #22C55E 100%)"; }
+  if (scorePct >= 80) { msg = "Outstanding Performance!"; grad = "var(--gradient-main)"; }
 
   const topics = {};
   questions.forEach(q => {
@@ -1215,100 +1180,94 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
     if (answers[q.id]?.isCorrect) topics[q.topic_tag].correct++;
   });
 
-  const downloadResults = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ score: scorePct, answers, studyPlan }));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", "studymap_results.json");
-    dlAnchorElem.click();
-  };
-
   return (
-    <div className="container" style={{ padding: '2rem 1rem' }}>
+    <div className="container" style={{ padding: '3rem 1rem' }}>
       
       {/* SECTION A — SCORE HERO */}
-      <div className="card text-center mb-8 fade-in-up" style={{ animationDelay: '0s' }}>
-        <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto' }}>
-          <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label={`Score: ${scorePct}%`}>
-            <circle cx="80" cy="80" r="65" stroke="var(--border)" strokeWidth="12" fill="none" />
-            <circle cx="80" cy="80" r="65" stroke="var(--primary)" strokeWidth="12" fill="none" strokeDasharray="408" strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1.2s ease', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} strokeLinecap="round" />
+      <div className="card text-center mb-8 fade-in-up" style={{ padding: '3rem 2rem', background: 'rgba(20, 22, 30, 0.8)', borderTop: '4px solid var(--primary)' }}>
+        <h1 style={{ fontSize: 32, marginBottom: '2rem' }} className="text-gradient">Session Complete</h1>
+        
+        <div style={{ position: 'relative', width: 180, height: 180, margin: '0 auto' }}>
+          <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label={\`Score: \${scorePct}%\`}>
+            <defs>
+              <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#6366F1" />
+                <stop offset="100%" stopColor="#A855F7" />
+              </linearGradient>
+            </defs>
+            <circle cx="90" cy="90" r="65" stroke="var(--bg-surface)" strokeWidth="14" fill="none" />
+            <circle cx="90" cy="90" r="65" stroke="url(#scoreGrad)" strokeWidth="14" fill="none" strokeDasharray="408" strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1)', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} strokeLinecap="round" />
           </svg>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 600, color: 'var(--primary)' }}>
-            {scorePct}%
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 42, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{scorePct}%</span>
           </div>
         </div>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 16, fontSize: 18 }}>{msg}</p>
         
-        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)' }}>Correct</div><div style={{ fontSize: 20, fontWeight: 600, color: 'var(--correct)' }}>✓ {correct}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)' }}>Wrong</div><div style={{ fontSize: 20, fontWeight: 600, color: 'var(--wrong)' }}>✗ {wrong}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)' }}>Skipped</div><div style={{ fontSize: 20, fontWeight: 600 }}>— {skipped}</div></div>
-          <div><div style={{ fontSize: 13, color: 'var(--text-hint)' }}>Time</div><div style={{ fontSize: 20, fontWeight: 600 }}>⏱ {Math.floor(timeTaken/60)}m {timeTaken%60}s</div></div>
-          {diagTotal > 0 && <div><div style={{ fontSize: 13, color: 'var(--text-hint)' }}>Diagrams</div><div style={{ fontSize: 20, fontWeight: 600, color: 'var(--primary)' }}>🔷 {diagCorrect}/{diagTotal}</div></div>}
+        <p style={{ color: 'var(--text-primary)', marginTop: 24, fontSize: 20, fontWeight: 600 }}>{msg}</p>
+        
+        <div style={{ display: 'flex', gap: '2rem', marginTop: '2.5rem', justifyContent: 'center', flexWrap: 'wrap', background: 'var(--bg-page)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
+          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Correct</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--correct)' }}>{correct}</div></div>
+          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Wrong</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--wrong)' }}>{wrong}</div></div>
+          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Skipped</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>{skipped}</div></div>
+          <div><div style={{ fontSize: 13, color: 'var(--text-hint)', textTransform: 'uppercase', letterSpacing: 1 }}>Time</div><div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>{Math.floor(timeTaken/60)}m {timeTaken%60}s</div></div>
         </div>
       </div>
 
-      {/* SECTION B — TOPIC HEATMAP */}
-      <h2 className="mb-4">Where to focus next</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: '2rem' }} className="fade-in-up" style={{ animationDelay: '0.1s' }}>
-        {Object.entries(topics).map(([topic, data], idx) => {
-          const pct = Math.round((data.correct / data.total) * 100);
-          const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--bg-surface)' : 'var(--wrong-bg)';
-          const border = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
-          const color = pct >= 80 ? 'var(--text-primary)' : pct >= 50 ? 'var(--text-primary)' : 'var(--text-primary)';
-          return (
-            <div key={topic} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: `2px solid ${border}`, background: bg, color: color, transition: 'all 0.2s ease' }} className="fade-in-up" style={{ animationDelay: `${0.1 + (idx * 0.08)}s` }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{topic}</div>
-              <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--border)', marginTop: 8 }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: border, borderRadius: 2 }} />
-              </div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>{data.correct}/{data.total} correct</div>
-              <div style={{ fontSize: 24, fontWeight: 600, marginTop: 4 }}>{pct}%</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* SECTION C — DIAGRAM PERFORMANCE */}
-      {diagramQs.length > 0 && (
-        <>
-          <h2 className="mb-4">Diagram & Flowchart Accuracy</h2>
-          {diagramQs.map(q => {
-            const ans = answers[q.id];
-            if (ans?.skipped) return null;
-            return (
-              <div key={q.id} className="card mb-4 fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div style={{ fontWeight: 600, marginBottom: 16 }}>{ans.score}/{ans.total} labels correct</div>
-                <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', width: '117%', pointerEvents: 'none' }}>
-                  <DiagramQuestion question={q} submitted={true} answer={ans} onAnswer={()=>{}} isMobile={isMobile} />
+      {/* SECTION B — STUDY RECOMMENDATIONS (MOVED UP FOR BETTER UX) */}
+      <h2 className="mb-4 text-gradient" style={{ fontSize: 24 }}>AI AI Study Plan</h2>
+      <div className="card mb-8 fade-in-up" style={{ animationDelay: '0.2s' }}>
+        {!studyPlan ? (
+          <div className="text-center" style={{ padding: '3rem 1rem' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem', boxShadow: 'var(--shadow-glow)' }} />
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>Analyzing your performance...</div>
+            <div style={{ fontSize: 13, color: 'var(--text-hint)', marginTop: 8 }}>Claude is generating personalized recommendations</div>
+          </div>
+        ) : (
+          <>
+            <p style={{ marginBottom: '2rem', color: 'var(--text-primary)', fontSize: 16, lineHeight: 1.6 }}>{studyPlan.summary}</p>
+            {studyPlan.study_priority?.map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 20, marginBottom: 20, paddingBottom: 20, borderBottom: i < studyPlan.study_priority.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary-light)', border: '1px solid var(--primary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, boxShadow: 'var(--shadow-glow)' }}>{i+1}</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 4 }}>{item.topic}</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.5 }}>{item.reason}</div>
+                  <div style={{ fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-page)', padding: '8px 12px', borderRadius: 6, borderLeft: '3px solid var(--primary)' }}>Action: <span style={{fontWeight: 600}}>{item.action}</span></div>
                 </div>
               </div>
-            );
-          })}
-        </>
-      )}
+            ))}
+          </>
+        )}
+      </div>
 
-      {/* SECTION D — QUESTION REVIEW */}
-      <h2 className="mb-4 mt-8">Question Review</h2>
-      <div className="mb-8 fade-in-up" style={{ animationDelay: '0.3s' }}>
+      {/* SECTION B.5 — QUESTION REVIEW */}
+      <h2 className="mb-4" style={{ fontSize: 20 }}>Question Review</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: '3rem' }}>
         {questions.map((q, i) => {
           const ans = answers[q.id];
-          const isCorrect = ans?.isCorrect;
+          const isCorrect = ans?.isCorrect || (ans?.score === ans?.total && ans?.total > 0);
           return (
-            <details key={q.id} style={{ background: 'var(--bg-card)', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', marginBottom: 8, overflow: 'hidden' }}>
-              <summary style={{ padding: '1rem', cursor: 'pointer', fontWeight: 500, display: 'flex', justifyContent: 'space-between', alignItems: 'center', outline: 'none' }}>
-                <span>Q{i+1}. {q.question.substring(0, 60)}{q.question.length > 60 ? '...' : ''}</span>
-                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 0, background: isCorrect ? 'var(--correct-bg)' : ans?.skipped ? 'var(--bg-surface)' : 'var(--wrong-bg)', color: isCorrect ? 'var(--correct)' : ans?.skipped ? 'var(--text-hint)' : 'var(--wrong)' }}>
+            <details key={q.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }} className="fade-in-up">
+              <summary style={{ padding: '1.25rem', cursor: 'pointer', outline: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-surface)' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Q{i+1}. {q.question.substring(0, 60)}{q.question.length > 60 ? '...' : ''}</span>
+                <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 'var(--radius-pill)', background: isCorrect ? 'var(--correct-bg)' : ans?.skipped ? 'var(--bg-surface)' : 'var(--wrong-bg)', color: isCorrect ? 'var(--correct)' : ans?.skipped ? 'var(--text-hint)' : 'var(--wrong)', fontWeight: 600 }}>
                   {isCorrect ? '✓ Correct' : ans?.skipped ? '— Skipped' : '✗ Wrong'}
                 </span>
               </summary>
-              <div style={{ padding: '1rem', borderTop: '2px solid var(--border)', background: 'var(--bg-surface)' }}>
-                {ans?.skipped ? <p>Skipped</p> : (
+              <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border)', background: 'var(--bg-page)' }}>
+                {ans?.skipped ? <p style={{ color: 'var(--text-hint)' }}>You skipped this question.</p> : (
                   <>
-                    <p style={{ color: isCorrect ? 'var(--correct)' : 'var(--wrong)' }}>Your answer: {ans?.value?.toString() || 'See diagram above'}</p>
-                    {!isCorrect && q.type !== 'diagram' && <p style={{ color: 'var(--correct)', marginTop: 4 }}>Correct answer: {q.correct_answer}</p>}
-                    <p style={{ marginTop: 8, fontSize: 14, color: 'var(--text-secondary)' }}>{q.explanation}</p>
-                    <p style={{ fontStyle: 'italic', fontSize: 12, color: 'var(--text-hint)', marginTop: 4 }}>— {q.page_ref}</p>
+                    <p style={{ color: isCorrect ? 'var(--correct)' : 'var(--wrong)', fontWeight: 600, marginBottom: 8 }}>
+                      Your answer: {typeof ans?.value === 'object' ? 'See diagram details' : ans?.value?.toString()}
+                    </p>
+                    {!isCorrect && q.type !== 'diagram' && (
+                      <p style={{ color: 'var(--correct)', marginBottom: 12 }}>
+                        Correct answer: <span style={{ fontWeight: 600 }}>{q.correct_answer}</span>
+                      </p>
+                    )}
+                    <div style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--primary)', marginTop: 12 }}>
+                      <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{q.explanation}</p>
+                      {q.page_ref && <p style={{ fontStyle: 'italic', fontSize: 12, color: 'var(--text-hint)', marginTop: 8 }}>Source: {q.page_ref}</p>}
+                    </div>
                   </>
                 )}
               </div>
@@ -1317,34 +1276,33 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
         })}
       </div>
 
-      {/* SECTION E — STUDY RECOMMENDATIONS */}
-      <h2 className="mb-4">Your Study Plan</h2>
-      <div className="card mb-8 fade-in-up" style={{ animationDelay: '0.4s' }}>
-        {!studyPlan ? (
-          <div className="text-center" style={{ padding: '2rem' }}><div style={{ width: 24, height: 24, borderRadius: 0, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />Generating...</div>
-        ) : (
-          <>
-            <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{studyPlan.summary}</p>
-            {studyPlan.study_priority?.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: i < studyPlan.study_priority.length - 1 ? '2px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 0, background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{item.topic}</div>
-                  <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{item.reason}</div>
-                  <div style={{ fontSize: 13, color: 'var(--primary)', fontStyle: 'italic', marginTop: 4 }}>{item.action}</div>
-                </div>
+      {/* SECTION C — TOPIC HEATMAP */}
+      <h2 className="mb-4" style={{ fontSize: 20 }}>Performance by Topic</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: '3rem' }} className="fade-in-up" style={{ animationDelay: '0.3s' }}>
+        {Object.entries(topics).map(([topic, data], idx) => {
+          const pct = Math.round((data.correct / data.total) * 100);
+          const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--partial-bg)' : 'var(--wrong-bg)';
+          const color = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
+          return (
+            <div key={topic} style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: \`1px solid \${color}\`, boxShadow: 'var(--shadow-sm)' }} className="fade-in-up" style={{ animationDelay: \`\${0.3 + (idx * 0.1)}s\` }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>{topic}</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 28, fontWeight: 800, color: color, lineHeight: 1 }}>{pct}%</span>
+                <span style={{ fontSize: 13, color: 'var(--text-hint)' }}>{data.correct}/{data.total}</span>
               </div>
-            ))}
-          </>
-        )}
+              <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--bg-page)', overflow: 'hidden' }}>
+                <div style={{ width: \`\${pct}%\`, height: '100%', background: color, borderRadius: 2 }} />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* SECTION F — ACTION BUTTONS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }} className="fade-in-up" style={{ animationDelay: '0.5s' }}>
-        <button className="btn btn-primary" onClick={onRetryWrong}>Retry Wrong Answers</button>
-        <button className="btn btn-outline" onClick={onRestart}>Retake Full Quiz</button>
-        <button className="btn btn-outline" onClick={() => window.location.reload()}>Upload New PDF</button>
-        <button className="btn btn-outline" onClick={downloadResults}>Download Results</button>
+      {/* SECTION D — ACTION BUTTONS */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }} className="fade-in-up" style={{ animationDelay: '0.5s' }}>
+        <button className="btn btn-primary" onClick={onRetryWrong} style={{ height: 56, fontSize: 15 }}>Retry Incorrect Questions</button>
+        <button className="btn btn-outline" onClick={onRestart} style={{ height: 56 }}>Take a New Quiz</button>
+        <button className="btn btn-outline" onClick={() => window.location.reload()} style={{ height: 56 }}>Start Over / Upload PDF</button>
       </div>
     </div>
   );
