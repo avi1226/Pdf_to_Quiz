@@ -185,7 +185,7 @@ const extractPdfText = async (file) => {
     fullText += pageText + '\n';
   }
   return {
-    text: fullText.slice(0, 12000), // limits text for API token cost constraints
+    text: fullText.slice(0, 60000), // supports larger documents for high-quality quiz generation
     pageCount: pdf.numPages,
     wordCount: fullText.split(/\s+/).length
   };
@@ -1278,13 +1278,13 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
 
       {/* SECTION C — TOPIC HEATMAP */}
       <h2 className="mb-4" style={{ fontSize: 20 }}>Performance by Topic</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: '3rem' }} className="fade-in-up" style={{ animationDelay: '0.3s' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: '3rem', animationDelay: '0.3s' }} className="fade-in-up">
         {Object.entries(topics).map(([topic, data], idx) => {
           const pct = Math.round((data.correct / data.total) * 100);
           const bg = pct >= 80 ? 'var(--correct-bg)' : pct >= 50 ? 'var(--partial-bg)' : 'var(--wrong-bg)';
           const color = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
           return (
-            <div key={topic} style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: `1px solid ${color}`, boxShadow: 'var(--shadow-sm)' }} className="fade-in-up" style={{ animationDelay: `${0.3 + (idx * 0.1)}s` }}>
+            <div key={topic} style={{ padding: '1.5rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: `1px solid ${color}`, boxShadow: 'var(--shadow-sm)', animationDelay: `${0.3 + (idx * 0.1)}s` }} className="fade-in-up">
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>{topic}</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 28, fontWeight: 800, color: color, lineHeight: 1 }}>{pct}%</span>
@@ -1299,7 +1299,7 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
       </div>
 
       {/* SECTION D — ACTION BUTTONS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }} className="fade-in-up" style={{ animationDelay: '0.5s' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', animationDelay: '0.5s' }} className="fade-in-up">
         <button className="btn btn-primary" onClick={onRetryWrong} style={{ height: 56, fontSize: 15 }}>Retry Incorrect Questions</button>
         <button className="btn btn-outline" onClick={onRestart} style={{ height: 56 }}>Take a New Quiz</button>
         <button className="btn btn-outline" onClick={() => window.location.reload()} style={{ height: 56 }}>Start Over / Upload PDF</button>
