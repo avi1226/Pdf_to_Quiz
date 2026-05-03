@@ -5,70 +5,69 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // ═══════════════════════════════════════════════
 const STYLES = `
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;900&family=JetBrains+Mono:wght@400;500;900&display=swap');
 
 :root {
   /* ── BACKGROUNDS ── */
-  --bg-page:          #0A0A0A;
-  --bg-card:          #111111;
-  --bg-surface:       #1A1A1A;
-  --bg-elevated:      #222222;
-  --bg-overlay:       #2A2A2A;
+  --bg-page:          #F5F5F5;
+  --bg-card:          #FFFFFF;
+  --bg-surface:       #FFFFFF;
+  --bg-elevated:      #FFFFFF;
+  --bg-overlay:       #FFFFFF;
 
   /* ── BORDERS ── */
-  --border-subtle:    #1F1F1F;
-  --border:           #2E2E2E;
-  --border-strong:    #444444;
-  --border-white:     #FFFFFF1A;
+  --border-subtle:    #2C2C2C;
+  --border:           #2C2C2C;
+  --border-strong:    #000000;
+  --border-white:     #2C2C2C;
 
   /* ── TEXT ── */
-  --text-primary:     #F5F5F5;
-  --text-secondary:   #A3A3A3;
-  --text-hint:        #525252;
-  --text-inverse:     #0A0A0A;
+  --text-primary:     #000000;
+  --text-secondary:   #888888;
+  --text-hint:        #888888;
+  --text-inverse:     #FFFFFF;
 
-  /* ── PRIMARY ACCENT — PURE WHITE ── */
-  --primary:          #FFFFFF;
-  --primary-hover:    #E5E5E5;
-  --primary-muted:    #D4D4D4;
+  /* ── PRIMARY ACCENT — PURE BLACK ── */
+  --primary:          #000000;
+  --primary-hover:    #333333;
+  --primary-muted:    #888888;
 
-  /* ── SEMANTIC — MONOCHROME VERSIONS ── */
-  --correct:          #E5E5E5;
-  --correct-bg:       #1C1C1C;
-  --correct-border:   #525252;
+  /* ── SEMANTIC — BRUTALIST ── */
+  --correct:          #000000;
+  --correct-bg:       #FFFFFF;
+  --correct-border:   #000000;
 
-  --wrong:            #6B6B6B;
-  --wrong-bg:         #161616;
-  --wrong-border:     #3A3A3A;
+  --wrong:            #000000;
+  --wrong-bg:         #FFFFFF;
+  --wrong-border:     #000000;
 
-  --partial:          #999999;
-  --partial-bg:       #1A1A1A;
-  --partial-border:   #444444;
+  --partial:          #000000;
+  --partial-bg:       #FFFFFF;
+  --partial-border:   #000000;
 
   /* ── DRAG AND DROP ── */
-  --drag-idle:        #1A1A1A;
-  --drag-hover:       #242424;
-  --drag-border:      #3D3D3D;
-  --drag-border-active: #888888;
-  --drag-correct:     #1C1C1C;
-  --drag-wrong:       #161616;
+  --drag-idle:        #FFFFFF;
+  --drag-hover:       #F5F5F5;
+  --drag-border:      #2C2C2C;
+  --drag-border-active: #000000;
+  --drag-correct:     #FFFFFF;
+  --drag-wrong:       #FFFFFF;
 
-  --drop-empty:       #111111;
-  --drop-active:      #1E1E1E;
-  --drop-filled:      #1A1A1A;
-  --drop-dashed:      #3D3D3D;
+  --drop-empty:       #FFFFFF;
+  --drop-active:      #F5F5F5;
+  --drop-filled:      #FFFFFF;
+  --drop-dashed:      #2C2C2C;
 
-  /* ── SHADOWS ── */
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.6);
-  --shadow-md:   0 4px 20px rgba(0,0,0,0.7);
-  --shadow-drag: 0 8px 32px rgba(0,0,0,0.8);
-  --shadow-glow: 0 0 0 1px rgba(255,255,255,0.08);
+  /* ── ZERO RADIUS & SHADOW ── */
+  --shadow-sm:   none;
+  --shadow-md:   none;
+  --shadow-drag: none;
+  --shadow-glow: none;
 
-  /* ── RADIUS ── */
-  --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   16px;
-  --radius-pill: 999px;
+  --radius-sm:   0px;
+  --radius-md:   0px;
+  --radius-lg:   0px;
+  --radius-pill: 0px;
 }
 
 /* ── GLOBAL RESET ── */
@@ -84,23 +83,23 @@ body {
 }
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-page); }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--partial); }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-page); border-left: 2px solid var(--border); }
+::-webkit-scrollbar-thumb { background: var(--primary); }
 
 /* ── FOCUS RING ── */
-:focus-visible { outline: 1.5px solid var(--primary); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
 
 /* ── SELECTION ── */
-::selection { background: var(--bg-elevated); color: var(--text-primary); }
+::selection { background: var(--primary); color: var(--text-inverse); }
 
-h1, h2, h3, h4, h5, h6 { font-weight: 600; color: var(--primary); }
+/* ── BRUTALIST TYPOGRAPHY ── */
+h1, h2, h3, h4, h5, h6 { font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: -0.02em; }
 p { font-weight: 400; color: var(--text-primary); }
-.mono { font-family: 'JetBrains Mono', monospace; }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 900; }
 
 .container { max-width: 760px; margin: 0 auto; padding: 0 1rem; }
-.card { background: var(--bg-card); box-shadow: var(--shadow-md); border-radius: var(--radius-lg); padding: 2rem; border: 1px solid var(--border-subtle); }
+.card { background: var(--bg-card); border-radius: 0; padding: 2rem; border: 2px solid var(--border); box-shadow: none; }
 
 .text-center { text-align: center; }
 .text-right { text-align: right; }
@@ -109,47 +108,44 @@ p { font-weight: 400; color: var(--text-primary); }
 .flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; } .gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; }
 .w-full { width: 100%; }
 
-button, input, select, textarea { font-family: inherit; font-size: inherit; }
+button, input, select, textarea { font-family: inherit; font-size: inherit; border-radius: 0; }
 
-/* Buttons */
-.btn { height: 48px; border: none; border-radius: var(--radius-md); padding: 0 1.25rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--bg-surface); color: var(--text-primary); }
-.btn:hover:not(:disabled) { background: var(--bg-elevated); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* ── BUTTONS ── */
+.btn { height: 48px; border: 2px solid var(--primary); border-radius: 0; padding: 0 1.25rem; font-weight: 900; cursor: pointer; transition: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: var(--bg-surface); color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 14px; }
+.btn:hover:not(:disabled) { background: var(--text-hint); color: var(--text-inverse); border-color: var(--text-hint); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; border-style: dashed; }
 .btn-primary { background: var(--primary); color: var(--text-inverse); }
-.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--text-inverse); }
+.btn-outline { background: var(--bg-surface); border: 2px solid var(--border); color: var(--text-primary); }
 .btn-outline.active { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
 
-/* Inputs */
-input[type="text"], input[type="password"], textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); min-height: 44px; transition: all 0.2s ease; }
-input:focus, textarea:focus { outline: none; border-color: var(--border-strong); box-shadow: var(--shadow-glow); }
-textarea { resize: vertical; min-height: 100px; }
-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-secondary); }
+/* ── INPUTS ── */
+input[type="text"], input[type="password"], textarea { width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 0; background: var(--bg-surface); color: var(--text-primary); min-height: 48px; transition: none; font-weight: 500; }
+input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: none; }
+textarea { resize: vertical; min-height: 120px; }
+label { display: block; margin-bottom: 0.5rem; font-weight: 900; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; }
 
-/* Animations */
+/* ── ANIMATIONS (REDUCED/REMOVED FOR BRUTALIST) ── */
 @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes correctFlash { 0% { background-color: var(--correct); } 100% { background-color: var(--correct-bg); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes correctFlash { 0%,100% { background-color: var(--correct-bg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 0 4px rgba(255,255,255,0.05); } }
+@keyframes pulse-border { 0%,100% { border-color: var(--border); } 50% { border-color: var(--primary); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.shake { animation: shake 0.4s ease; }
-.fade-in-up { animation: fadeInUp 0.4s ease both; }
-.slide-in-right { animation: slideInRight 0.3s ease; }
+.shake { animation: shake 0.2s ease; }
+.fade-in-up { animation: fadeInUp 0.2s ease both; }
+.slide-in-right { animation: slideInRight 0.2s ease; }
 
 /* Grid Layouts */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-
-/* Diagram Specific */
 .diagram-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 1.5rem; }
 
-/* Responsive adjustments */
 @media (max-width: 639px) {
   .grid-2, .grid-3, .diagram-layout { grid-template-columns: 1fr; }
-  .card { padding: 1rem; }
+  .card { padding: 1rem; border-width: 2px; }
   .btn, .input { width: 100%; }
 }
 
@@ -473,7 +469,7 @@ export default function StudyMap() {
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
       {error && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '1rem' }} className="fade-in-up">
-          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '1px solid var(--wrong)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ maxWidth: 600, margin: '0 auto', background: 'var(--wrong-bg)', border: '2px solid var(--wrong)', color: 'var(--text-primary)', padding: '12px 16px', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span><span style={{ fontWeight: 600 }}>✗</span> {error.message}</span>
             <button onClick={() => setError(null)} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 600 }}>✕</button>
           </div>
@@ -524,7 +520,7 @@ export default function StudyMap() {
       {screen === 'loading' && (
         <div className="container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="text-center">
-            <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+            <div style={{ width: 48, height: 48, borderRadius: 0%', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
             <div style={{ color: 'var(--text-secondary)' }} className="fade-in">{loadingMessage}</div>
           </div>
         </div>
@@ -631,7 +627,7 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
           </div>
         ) : (
           <div className="fade-in-up mb-8">
-            <div className="flex items-center gap-2 mb-4" style={{ background: 'var(--correct-bg)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--correct)' }}>
+            <div className="flex items-center gap-2 mb-4" style={{ background: 'var(--correct-bg)', padding: '12px', borderRadius: 'var(--radius-md)', border: '2px solid var(--correct)' }}>
               <span style={{ color: 'var(--correct)' }}>✓</span>
               <div>
                 <div style={{ fontWeight: 600 }}>{uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)</div>
@@ -646,7 +642,7 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
               </div>
               <div>
                 <label>Difficulty</label>
-                <div className="flex" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                <div className="flex" style={{ border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                   {['easy', 'medium', 'hard'].map(lvl => (
                     <button key={lvl} className={config.difficulty === lvl ? 'btn-primary' : 'btn-outline'} style={{ flex: 1, borderRadius: 0, border: 'none', height: 36, fontSize: 13, textTransform: 'capitalize', background: config.difficulty === lvl ? 'var(--primary)' : 'transparent', color: config.difficulty === lvl ? 'white' : 'var(--text-primary)' }} onClick={() => setConfig({ ...config, difficulty: lvl })}>
                       {lvl}
@@ -676,7 +672,7 @@ function UploadScreen({ pdfjsReady, uploadedFile, setUploadedFile, pdfText, setP
                 ].map(t => {
                   const active = config.types.includes(t.id);
                   return (
-                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--drag-idle)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                    <button key={t.id} onClick={() => toggleType(t.id)} style={{ padding: '6px 12px', borderRadius: 0, border: `2px solid ${active ? 'var(--primary)' : 'var(--border)'}`, background: active ? 'var(--drag-idle)' : 'var(--bg-surface)', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', transition: 'all 0.2s ease' }}>
                       {t.label}
                     </button>
                   )
@@ -739,7 +735,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 
   return (
     <div>
-      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '0.75rem 0' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'var(--bg-card)', borderBottom: '2px solid var(--border)', padding: '0.75rem 0' }}>
         <div className="container flex justify-between items-center">
           <div style={{ fontWeight: 600, color: 'var(--primary)' }}>StudyMap</div>
           <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Question {currentIndex + 1} of {questions.length}</div>
@@ -763,8 +759,8 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
       <div className="container" style={{ padding: '2rem 1rem' }}>
         <div className="card slide-in-right" key={q.id} style={{ maxWidth: 680, margin: '0 auto' }}>
           <div className="flex justify-between items-center mb-4">
-            <span style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{q.topic_tag}</span>
-            <span style={{ background: q.difficulty === 'easy' ? 'var(--correct-bg)' : q.difficulty === 'medium' ? 'var(--partial-bg)' : 'var(--wrong-bg)', color: q.difficulty === 'easy' ? 'var(--text-primary)' : q.difficulty === 'medium' ? 'var(--text-primary)' : 'var(--text-primary)', borderRadius: 20, padding: '4px 12px', fontSize: 12 }}>{q.difficulty}</span>
+            <span style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 0, padding: '4px 12px', fontSize: 12, fontWeight: 500 }}>{q.topic_tag}</span>
+            <span style={{ background: q.difficulty === 'easy' ? 'var(--correct-bg)' : q.difficulty === 'medium' ? 'var(--partial-bg)' : 'var(--wrong-bg)', color: q.difficulty === 'easy' ? 'var(--text-primary)' : q.difficulty === 'medium' ? 'var(--text-primary)' : 'var(--text-primary)', borderRadius: 0, padding: '4px 12px', fontSize: 12 }}>{q.difficulty}</span>
           </div>
 
           <div style={{ color: 'var(--text-hint)', fontSize: 13, marginBottom: 8 }}>Q{currentIndex + 1}</div>
@@ -827,7 +823,7 @@ function MCQQuestion({ question, submitted, answer, onAnswer }) {
   return (
     <div>
       {question.options.map(opt => {
-        let style = { padding: '12px 16px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', marginBottom: 8, transition: 'all 0.2s ease' };
+        let style = { padding: '12px 16px', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', cursor: 'pointer', marginBottom: 8, transition: 'all 0.2s ease' };
         let icon = null;
         if (submitted) {
           if (opt === question.correct_answer) {
@@ -862,7 +858,7 @@ function TrueFalseQuestion({ question, submitted, answer, onAnswer }) {
     <div>
       <div className="grid-2">
         {['True', 'False'].map(opt => {
-          let style = { height: 52, flex: 1, fontSize: 16, fontWeight: 500, borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' };
+          let style = { height: 52, flex: 1, fontSize: 16, fontWeight: 500, borderRadius: 'var(--radius-md)', border: '2px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' };
           if (submitted) {
             if (opt.toLowerCase() === question.correct_answer.toString().toLowerCase()) { style.background = 'var(--correct)'; style.color = 'white'; style.borderColor = 'var(--correct)'; }
             else if (opt === answer.value) { style.background = 'var(--wrong)'; style.color = 'white'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease'; }
@@ -941,7 +937,7 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer, apiKey, ca
       ) : (
         answer.skipped ? <p>Skipped</p> : (
           <div>
-            <div style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+            <div style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--border)' }}>
               <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>{answer.score}% Match</div>
               <ul style={{ listStyle: 'none', marginBottom: 16 }}>
                 {answer.mentioned?.map((m, i) => <li key={i} style={{ color: 'var(--correct)', fontSize: 14, marginBottom: 4 }}>✓ {m}</li>)}
@@ -1074,7 +1070,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               const isSelected = chip.id === selectedChipId;
               const isDragging = dragState.draggingChipId === chip.id;
               
-              let style = { padding: '8px 16px', borderRadius: 20, border: '1.5px solid var(--drag-border)', background: 'var(--drag-idle)', color: 'var(--primary)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.15s ease', boxShadow: 'var(--shadow-sm)', opacity: 1 };
+              let style = { padding: '8px 16px', borderRadius: 0, border: '2px solid var(--drag-border)', background: 'var(--drag-idle)', color: 'var(--primary)', fontFamily: "'JetBrains Mono', monospace", fontSize: 13, cursor: isUsed || submitted ? 'default' : 'grab', userSelect: 'none', transition: 'all 0.15s ease', boxShadow: 'var(--shadow-sm)', opacity: 1 };
               
               if (isUsed) { style.background = 'var(--bg-surface)'; style.borderColor = 'var(--border)'; style.color = 'var(--text-hint)'; style.opacity = 0.55; style.pointerEvents = 'none'; }
               else if (isSelected) { style.borderColor = 'var(--primary-hover)'; style.background = '#EFF6FF'; style.boxShadow = '0 0 0 3px rgba(255,255,255,0.15)'; }
@@ -1099,7 +1095,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
           <h3 style={{ fontSize: 16 }}>{question.diagram_title}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{question.diagram_description}</p>
           
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-surface)', padding: '2rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', overflowX: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--bg-surface)', padding: '2rem 1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--border)', overflowX: 'auto' }}>
             {question.nodes && question.nodes.map((node, i) => {
               const zoneDef = question.drop_zones.find(z => z.node_id === node.id);
               const activeZone = (submitted && answer?.dropZones ? answer.dropZones : dropZones).find(z => z.nodeId === node.id || z.node_id === node.id);
@@ -1130,7 +1126,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                     onClick={() => { if(!submitted && isMobile) handleZoneTap(activeZone.id); }}
                   >
                     {content}
-                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: '50%', background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
+                    {filledChip && !submitted && <button style={{ position: 'absolute', top: -8, right: -8, width: 18, height: 18, borderRadius: 0%', background: 'var(--wrong)', color: 'var(--text-inverse)', fontSize: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
                     {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 2, fontWeight: 600 }}>{zr.correctLabel}</div>}
                   </div>
                 );
@@ -1139,17 +1135,17 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               return (
                 <React.Fragment key={node.id}>
                   {node.type === 'start' || node.type === 'end' ? (
-                    <div style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 50, padding: '8px 20px', fontSize: 13, fontWeight: 500 }}>
+                    <div style={{ background: 'var(--primary)', color: 'var(--text-inverse)', borderRadius: 0, padding: '8px 20px', fontSize: 13, fontWeight: 500 }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   ) : node.type === 'decision' ? (
-                    <div style={{ width: 110, height: 110, transform: 'rotate(45deg)', background: 'var(--bg-surface)', border: '1.5px solid var(--partial)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 110, height: 110, transform: 'rotate(45deg)', background: 'var(--bg-surface)', border: '2px solid var(--partial)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <div style={{ transform: 'rotate(-45deg)', padding: 8, fontSize: 12, textAlign: 'center' }}>
                         {DropZoneCmp || node.display_text}
                       </div>
                     </div>
                   ) : (
-                    <div style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 16px', minWidth: 140, textAlign: 'center', fontSize: 13 }}>
+                    <div style={{ background: 'var(--bg-card)', border: '2px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 16px', minWidth: 140, textAlign: 'center', fontSize: 13 }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   )}
@@ -1261,7 +1257,7 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
           const border = pct >= 80 ? 'var(--correct)' : pct >= 50 ? 'var(--partial)' : 'var(--wrong)';
           const color = pct >= 80 ? 'var(--text-primary)' : pct >= 50 ? 'var(--text-primary)' : 'var(--text-primary)';
           return (
-            <div key={topic} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: `1.5px solid ${border}`, background: bg, color: color, transition: 'all 0.2s ease' }} className="fade-in-up" style={{ animationDelay: `${0.1 + (idx * 0.08)}s` }}>
+            <div key={topic} style={{ padding: '1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: `2px solid ${border}`, background: bg, color: color, transition: 'all 0.2s ease' }} className="fade-in-up" style={{ animationDelay: `${0.1 + (idx * 0.08)}s` }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{topic}</div>
               <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'var(--border)', marginTop: 8 }}>
                 <div style={{ width: `${pct}%`, height: '100%', background: border, borderRadius: 2 }} />
@@ -1299,14 +1295,14 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
           const ans = answers[q.id];
           const isCorrect = ans?.isCorrect;
           return (
-            <details key={q.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', marginBottom: 8, overflow: 'hidden' }}>
+            <details key={q.id} style={{ background: 'var(--bg-card)', border: '2px solid var(--border)', borderRadius: 'var(--radius-md)', marginBottom: 8, overflow: 'hidden' }}>
               <summary style={{ padding: '1rem', cursor: 'pointer', fontWeight: 500, display: 'flex', justifyContent: 'space-between', alignItems: 'center', outline: 'none' }}>
                 <span>Q{i+1}. {q.question.substring(0, 60)}{q.question.length > 60 ? '...' : ''}</span>
-                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, background: isCorrect ? 'var(--correct-bg)' : ans?.skipped ? 'var(--bg-surface)' : 'var(--wrong-bg)', color: isCorrect ? 'var(--correct)' : ans?.skipped ? 'var(--text-hint)' : 'var(--wrong)' }}>
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 0, background: isCorrect ? 'var(--correct-bg)' : ans?.skipped ? 'var(--bg-surface)' : 'var(--wrong-bg)', color: isCorrect ? 'var(--correct)' : ans?.skipped ? 'var(--text-hint)' : 'var(--wrong)' }}>
                   {isCorrect ? '✓ Correct' : ans?.skipped ? '— Skipped' : '✗ Wrong'}
                 </span>
               </summary>
-              <div style={{ padding: '1rem', borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+              <div style={{ padding: '1rem', borderTop: '2px solid var(--border)', background: 'var(--bg-surface)' }}>
                 {ans?.skipped ? <p>Skipped</p> : (
                   <>
                     <p style={{ color: isCorrect ? 'var(--correct)' : 'var(--wrong)' }}>Your answer: {ans?.value?.toString() || 'See diagram above'}</p>
@@ -1325,13 +1321,13 @@ function ResultsScreen({ questions, answers, studyPlan, isMobile, onRestart, onR
       <h2 className="mb-4">Your Study Plan</h2>
       <div className="card mb-8 fade-in-up" style={{ animationDelay: '0.4s' }}>
         {!studyPlan ? (
-          <div className="text-center" style={{ padding: '2rem' }}><div style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />Generating...</div>
+          <div className="text-center" style={{ padding: '2rem' }}><div style={{ width: 24, height: 24, borderRadius: 0%', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />Generating...</div>
         ) : (
           <>
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>{studyPlan.summary}</p>
             {studyPlan.study_priority?.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: i < studyPlan.study_priority.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
+              <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: i < studyPlan.study_priority.length - 1 ? '2px solid var(--border)' : 'none' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 0%', background: 'var(--primary)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>{i+1}</div>
                 <div>
                   <div style={{ fontWeight: 600 }}>{item.topic}</div>
                   <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{item.reason}</div>
