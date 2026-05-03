@@ -290,7 +290,7 @@ Return JSON:
 // ═══════════════════════════════════════════════
 
 
-const generateLocalQuestions = (text, count) => {
+const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
   const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
   const filtered = sentences
     .map(s => s.trim())
@@ -299,10 +299,11 @@ const generateLocalQuestions = (text, count) => {
   const shuffled = shuffle(filtered).slice(0, count);
   
   return {
-    quiz_title: "Quick Study Guide",
-    topics_covered: ["Document Content"],
+    quiz_title: "Offline Study Session",
+    topics_covered: ["Key Concepts"],
     questions: shuffled.map((s, i) => {
-      const type = i % 2 === 0 ? 'fill_blank' : 'mcq';
+      // Rotate through the user's selected types
+      const type = types[i % types.length];
       const words = s.replace(/[.!?(),;:]/g, '').split(/\s+/);
       const candidates = words.filter(w => w.length > 5);
       const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : words[0];
@@ -311,28 +312,87 @@ const generateLocalQuestions = (text, count) => {
         return {
           id: `q-${i}`,
           type: 'fill_blank',
-          topic_tag: 'Key Concepts',
+          topic_tag: 'Vocabulary',
           difficulty: 'medium',
           page_ref: 'Contextual',
-          question: 'Identify the missing key term:',
+          question: 'Complete the sentence with the correct term:',
           sentence: s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___'),
           correct_answer: target,
-          explanation: `Full context: "${s}"`
+          explanation: `The full context is: "${s}"`
+        };
+      } else if (type === 'true_false') {
+        const isTrue = Math.random() > 0.5;
+        let questionText = s;
+        let correctAnswer = "True";
+        if (!isTrue) {
+          const wordsToChange = words.filter(w => w.length > 4);
+          if (wordsToChange.length > 0) {
+            const wordToReplace = wordsToChange[Math.floor(Math.random() * wordsToChange.length)];
+            questionText = s.replace(new RegExp(`\\b${wordToReplace}\\b`, 'i'), 'something else');
+            correctAnswer = "False";
+          }
+        }
+        return {
+          id: `q-${i}`,
+          type: 'true_false',
+          topic_tag: 'Fact Check',
+          difficulty: 'easy',
+          page_ref: 'Contextual',
+          question: `Is the following statement true or false based on the text: "${questionText}"`,
+          correct_answer: correctAnswer,
+          explanation: `The original text states: "${s}"`
+        };
+      } else if (type === 'short_answer') {
+        return {
+          id: `q-${i}`,
+          type: 'short_answer',
+          topic_tag: 'Comprehension',
+          difficulty: 'hard',
+          page_ref: 'Critical Thinking',
+          question: `Based on the text, explain the significance of: "${s}"`,
+          model_answer: s,
+          key_points: words.filter(w => w.length > 6).slice(0, 3),
+          explanation: `Your answer should mention key concepts from: "${s}"`
+        };
+      } else if (type === 'diagram') {
+        // Simple placeholder flowchart logic for offline
+        return {
+          id: `q-${i}`,
+          type: 'diagram',
+          topic_tag: 'Visual Learning',
+          difficulty: 'hard',
+          page_ref: 'Logical Flow',
+          question: 'Organize these components of the concept into the correct order:',
+          nodes: [
+            { id: 'n1', type: 'start', display_text: 'START', position: { row: 1, col: 1 }, connects_to: ['n2'] },
+            { id: 'n2', type: 'process', display_text: '___', position: { row: 2, col: 1 }, connects_to: ['n3'] },
+            { id: 'n3', type: 'end', display_text: 'END', position: { row: 3, col: 1 }, connects_to: [] }
+          ],
+          drop_zones: [
+            { id: 'z1', node_id: 'n2', number: 1, correct_chip_id: 'c1' }
+          ],
+          answer_chips: shuffle([
+            { id: 'c1', label: target, correct_zone_id: 'z1' },
+            { id: 'c2', label: 'Noise', correct_zone_id: null },
+            { id: 'c3', label: 'Distraction', correct_zone_id: null }
+          ]),
+          explanation: `This follows the sequence described in: "${s}"`
         };
       } else {
+        // Default to MCQ
         const decoys = shuffle(words.filter(w => w.length > 5 && w.toLowerCase() !== target.toLowerCase())).slice(0, 3);
-        while (decoys.length < 3) decoys.push(["Knowledge", "Concept", "Information", "Analysis"][decoys.length]);
+        while (decoys.length < 3) decoys.push(["Context", "Detail", "Evidence", "Subject"][decoys.length]);
         
         return {
           id: `q-${i}`,
           type: 'mcq',
-          topic_tag: 'Fact Check',
+          topic_tag: 'General',
           difficulty: 'medium',
           page_ref: 'Contextual',
-          question: `Which word is missing: "${s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___')}"?`,
+          question: `Which term correctly completes this thought: "${s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___')}"?`,
           options: shuffle([target, ...decoys]),
           correct_answer: target,
-          explanation: `Based on the sentence: "${s}"`
+          explanation: `The text says: "${s}"`
         };
       }
     })
@@ -450,7 +510,7 @@ export default function StudyMap() {
             
             setTimeout(() => {
               try {
-                const parsed = generateLocalQuestions(pdfText, config.questionCount);
+                const parsed = generateLocalQuestions(pdfText, config.questionCount, config.types);
                 setQuestions(parsed.questions);
                 setQuizTitle(parsed.quiz_title);
                 setStartTime(Date.now());
