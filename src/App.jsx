@@ -511,6 +511,9 @@ export default function RawPrep() {
             setTimeout(() => {
               try {
                 const parsed = generateLocalQuestions(pdfText, config.questionCount, config.types);
+                if (!parsed || !parsed.questions || parsed.questions.length === 0) {
+                  throw new Error("No questions could be generated from this document content. Try a longer document or different settings.");
+                }
                 setQuestions(parsed.questions);
                 setQuizTitle(parsed.quiz_title);
                 setStartTime(Date.now());
@@ -726,6 +729,8 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
   const progress = ((currentIndex) / questions.length) * 100;
 
   const q = questions[currentIndex];
+  if (!q) return <div className="container" style={{padding: '4rem', textAlign: 'center'}}><h2>Loading question...</h2></div>;
+  
   const qSubmitted = submitted[q.id];
   const qAnswer = answers[q.id];
 
@@ -788,7 +793,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
           {q.type === 'mcq' && <MCQQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'true_false' && <TrueFalseQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'fill_blank' && <FillBlankQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
-          {q.type === 'short_answer' && <ShortAnswerQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} apiKey={apiKey} callAnthropic={callAnthropic} />}
+          {q.type === 'short_answer' && <ShortAnswerQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'diagram' && <DiagramQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} isMobile={isMobile} />}
 
           {qSubmitted && (
@@ -850,7 +855,7 @@ function MCQQuestion({ question, submitted, answer, onAnswer }) {
           if (opt === question.correct_answer) {
             style.background = 'var(--correct-bg)'; style.borderColor = 'var(--correct)'; style.boxShadow = '0 0 15px rgba(34,197,94,0.1)';
             icon = <div style={{ width: 20, height: 20, borderRadius: 0, background: 'var(--correct)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 16 }}>✓</div>;
-          } else if (opt === answer.value) {
+          } else if (answer && opt === answer.value) {
             style.background = 'var(--wrong-bg)'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease';
             icon = <div style={{ width: 20, height: 20, borderRadius: 0, background: 'var(--wrong)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, marginRight: 16 }}>✗</div>;
           } else {
@@ -868,7 +873,7 @@ function MCQQuestion({ question, submitted, answer, onAnswer }) {
           </div>
         );
       })}
-      {submitted && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
+      {submitted && answer && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
     </div>
   );
 }
@@ -885,13 +890,13 @@ function TrueFalseQuestion({ question, submitted, answer, onAnswer }) {
           let style = { height: 64, flex: 1, fontSize: 18, fontWeight: 600, borderRadius: 0, border: '1px solid var(--border)', background: 'var(--bg-surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' };
           if (submitted) {
             if (opt.toLowerCase() === question.correct_answer.toString().toLowerCase()) { style.background = 'var(--correct-bg)'; style.color = 'var(--correct)'; style.borderColor = 'var(--correct)'; style.boxShadow = '0 0 15px rgba(34,197,94,0.15)'; }
-            else if (opt === answer.value) { style.background = 'var(--wrong-bg)'; style.color = 'var(--wrong)'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease'; }
+            else if (answer && opt === answer.value) { style.background = 'var(--wrong-bg)'; style.color = 'var(--wrong)'; style.borderColor = 'var(--wrong)'; style.animation = 'shake 0.4s ease'; }
             else { style.opacity = 0.3; }
           }
           return <button key={opt} style={style} onClick={() => handleClick(opt)} onMouseEnter={e => { if(!submitted) { e.currentTarget.style.background='var(--bg-elevated)'; e.currentTarget.style.borderColor='var(--primary)'; } }} onMouseLeave={e => { if(!submitted) { e.currentTarget.style.background='var(--bg-surface)'; e.currentTarget.style.borderColor='var(--border)'; } }}>{opt}</button>;
         })}
       </div>
-      {submitted && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
+      {submitted && answer && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
     </div>
   );
 }
@@ -909,8 +914,8 @@ function FillBlankQuestion({ question, submitted, answer, onAnswer }) {
           <React.Fragment key={i}>
             {part}
             {i < arr.length - 1 && (
-              <span style={{ display: 'inline-block', minWidth: 140, borderBottom: '3px solid var(--primary)', margin: '0 8px', padding: '0 8px', textAlign: 'center', color: submitted ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'var(--primary)', fontWeight: 700, background: 'var(--bg-surface)', borderRadius: '4px 4px 0 0' }}>
-                {submitted ? answer.value : ' '}
+              <span style={{ display: 'inline-block', minWidth: 140, borderBottom: '3px solid var(--primary)', margin: '0 8px', padding: '0 8px', textAlign: 'center', color: submitted && answer ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'var(--primary)', fontWeight: 700, background: 'var(--bg-surface)', borderRadius: '4px 4px 0 0' }}>
+                {submitted && answer ? answer.value : ' '}
               </span>
             )}
           </React.Fragment>
