@@ -330,15 +330,18 @@ const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
       const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : words[0];
 
       if (type === 'fill_blank') {
+        const decoys = shuffle(words.filter(w => w.length > 5 && w.toLowerCase() !== target.toLowerCase())).slice(0, 3);
+        while (decoys.length < 3) decoys.push(["Term", "Concept", "Context", "Detail"][decoys.length]);
         return {
           id: `q-${i}`,
           type: 'fill_blank',
           topic_tag: 'Vocabulary',
           difficulty: 'medium',
           page_ref: 'Contextual',
-          question: 'Complete the sentence with the correct term:',
+          question: 'Drag the correct term into the blank space:',
           sentence: s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___'),
           correct_answer: target,
+          options: shuffle([target, ...decoys]),
           explanation: `The full context is: "${s}"`
         };
       } else if (type === 'true_false') {
@@ -818,7 +821,7 @@ function QuizScreen({ isMobile, questions, currentIndex, setCurrentIndex, answer
 
           {q.type === 'mcq' && <MCQQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'true_false' && <TrueFalseQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
-          {q.type === 'fill_blank' && <FillBlankQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
+          {q.type === 'fill_blank' && <FillBlankQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} isMobile={isMobile} />}
           {q.type === 'short_answer' && <ShortAnswerQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} />}
           {q.type === 'diagram' && <DiagramQuestion question={q} submitted={qSubmitted} answer={qAnswer} onAnswer={(r) => handleAnswerSubmit(q.id, r)} isMobile={isMobile} />}
 
@@ -927,38 +930,98 @@ function TrueFalseQuestion({ question, submitted, answer, onAnswer }) {
   );
 }
 
-function FillBlankQuestion({ question, submitted, answer, onAnswer }) {
-  const [val, setVal] = useState('');
-  const submit = () => {
-    if (!val.trim()) return;
-    onAnswer({ value: val, isCorrect: val.trim().toLowerCase() === question.correct_answer.toLowerCase() });
+function FillBlankQuestion({ question, submitted, answer, onAnswer, isMobile }) {
+  const [isOver, setIsOver] = useState(false);
+  const [tapSelection, setTapSelection] = useState(null);
+
+  const handleDrop = (val) => {
+    if (submitted) return;
+    onAnswer({ value: val, isCorrect: val.toLowerCase() === question.correct_answer.toLowerCase() });
   };
+
+  const handleTapSelect = (val) => {
+    if (submitted) return;
+    if (isMobile) {
+      if (tapSelection === val) setTapSelection(null);
+      else setTapSelection(val);
+    }
+  };
+
+  const handleBlankClick = () => {
+    if (submitted || !isMobile || !tapSelection) return;
+    handleDrop(tapSelection);
+  };
+
   return (
     <div>
-      <p style={{ fontSize: 18, lineHeight: 1.8, marginBottom: '2rem', color: 'var(--text-primary)' }}>
+      <p style={{ fontSize: 20, lineHeight: 2, marginBottom: '3rem', color: 'var(--text-primary)', textAlign: 'center', padding: '1.5rem', background: 'var(--bg-page)', border: '1px solid var(--border)', borderRadius: 0 }}>
         {question.sentence.split('___').map((part, i, arr) => (
           <React.Fragment key={i}>
             {part}
             {i < arr.length - 1 && (
-              <span style={{ display: 'inline-block', minWidth: 140, borderBottom: '3px solid var(--primary)', margin: '0 8px', padding: '0 8px', textAlign: 'center', color: submitted && answer ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'var(--primary)', fontWeight: 700, background: 'var(--bg-surface)', borderRadius: '4px 4px 0 0' }}>
-                {submitted && answer ? answer.value : ' '}
+              <span 
+                onClick={handleBlankClick}
+                onDragOver={e => { e.preventDefault(); setIsOver(true); }}
+                onDragLeave={() => setIsOver(false)}
+                onDrop={e => { e.preventDefault(); setIsOver(false); handleDrop(e.dataTransfer.getData('text')); }}
+                style={{ 
+                  display: 'inline-flex', 
+                  minWidth: 160, 
+                  height: 44,
+                  borderBottom: '4px solid var(--primary)', 
+                  margin: '0 12px', 
+                  padding: '0 12px', 
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  verticalAlign: 'middle',
+                  color: (submitted && answer) ? (answer.isCorrect ? 'var(--correct)' : 'var(--wrong)') : 'var(--primary)', 
+                  fontWeight: 900, 
+                  background: isOver ? 'var(--primary-light)' : 'var(--bg-surface)',
+                  transition: 'all 0.2s',
+                  cursor: !submitted && isMobile && tapSelection ? 'pointer' : 'default',
+                  boxShadow: isOver ? 'var(--shadow-glow)' : 'none',
+                  borderRadius: 0
+                }}
+              >
+                {(submitted && answer) ? answer.value : (isMobile && tapSelection ? '???' : 'DRAG HERE')}
               </span>
             )}
           </React.Fragment>
         ))}
       </p>
+
       {!submitted && (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <input type="text" className="mono" value={val} onChange={e => setVal(e.target.value)} placeholder="Type your answer" onKeyDown={e => e.key === 'Enter' && submit()} style={{ fontSize: 16 }} />
-          <button className="btn btn-primary" onClick={submit} style={{ padding: '0 2rem' }}>Check</button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
+          {question.options.map(opt => (
+            <div
+              key={opt}
+              draggable={!isMobile}
+              onDragStart={e => e.dataTransfer.setData('text', opt)}
+              onClick={() => handleTapSelect(opt)}
+              style={{
+                padding: '12px 24px',
+                background: tapSelection === opt ? 'var(--primary)' : 'var(--bg-card)',
+                color: tapSelection === opt ? 'var(--text-inverse)' : 'var(--text-primary)',
+                border: '2px solid #000',
+                fontWeight: 900,
+                cursor: 'pointer',
+                boxShadow: tapSelection === opt ? 'none' : '4px 4px 0px #000',
+                transition: 'all 0.1s',
+                transform: tapSelection === opt ? 'translate(2px, 2px)' : 'none'
+              }}
+            >
+              {opt}
+            </div>
+          ))}
         </div>
       )}
-      {submitted && !answer.skipped && !answer.isCorrect && (
-        <div style={{ marginTop: '1rem', color: 'var(--wrong)', background: 'var(--wrong-bg)', padding: '12px 16px', borderRadius: 0, border: '1px solid var(--wrong-border)' }}>
-          <span style={{ fontWeight: 600 }}>✗ Incorrect.</span> Correct answer: <span style={{ color: 'var(--text-primary)', fontWeight: 700, background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: 0, marginLeft: 8 }}>{question.correct_answer}</span>
+
+      {submitted && answer && !answer.skipped && !answer.isCorrect && (
+        <div style={{ marginTop: '2rem', color: 'var(--wrong)', background: 'var(--wrong-bg)', padding: '16px', border: '2px solid var(--wrong)', fontWeight: 700 }}>
+          ✗ Incorrect. The correct term was: <span style={{ textDecoration: 'underline' }}>{question.correct_answer}</span>
         </div>
       )}
-      {submitted && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
+      {submitted && answer && !answer.skipped && <ExplanationBox question={question} isCorrect={answer.isCorrect} />}
     </div>
   );
 }
