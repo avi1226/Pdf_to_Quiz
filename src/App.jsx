@@ -104,6 +104,18 @@ input[type="text"], input[type="password"], input[type="range"] {
   .card { padding: 1.5rem; }
   .btn, .input { width: 100%; }
 }
+
+/* Utilities */
+.mt-4 { margin-top: 1rem; }
+.mt-8 { margin-top: 2rem; }
+.mt-12 { margin-top: 3rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-8 { margin-bottom: 2rem; }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.text-center { text-align: center; }
+.w-full { width: 100%; }
 `;
 
 // ═══════════════════════════════════════════════
