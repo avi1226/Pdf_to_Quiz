@@ -1057,7 +1057,7 @@ function ShortAnswerQuestion({ question, submitted, answer, onAnswer }) {
     <div>
       {!submitted ? (
         <div>
-          <textarea value={val} onChange={e => setVal(e.target.value)} placeholder="Type your comprehensive explanation here..." style={{ fontSize: 15, lineHeight: 1.6 }} />
+          <textarea value={val} onChange={e => setVal(e.target.value)} placeholder="Type your comprehensive explanation here..." style={{ width: '100%', minHeight: '200px', padding: '1.5rem', border: '2px solid #000', fontSize: 16, lineHeight: 1.6, borderRadius: 0, outline: 'none', background: 'var(--bg-surface)' }} />
           <div style={{ textAlign: 'right', fontSize: 13, color: 'var(--text-hint)', marginTop: 8, marginBottom: 20 }}>{wordCount} words</div>
           <button className="btn btn-primary w-full" onClick={submit} disabled={loading} style={{ height: 56 }}>
             {loading ? <span style={{display: 'flex', alignItems: 'center', gap: 8}}><div style={{width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: 0, animation: 'spin 1s linear infinite'}}/> Evaluating Answer...</span> : 'Submit Answer'}
