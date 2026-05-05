@@ -180,6 +180,17 @@ const extractTxtText = async (file) => {
   };
 };
 
+const extractDocxText = async (file) => {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+  const text = result.value;
+  return {
+    text: text.slice(0, 60000),
+    pageCount: 1, // Mammoth doesn't easily give page counts for DOCX
+    wordCount: text.split(/\s+/).length
+  };
+};
+
 const shuffle = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -473,6 +484,7 @@ export default function RawPrep() {
 
   const [pdfjsReady, setPdfjsReady] = useState(false);
   const [jszipReady, setJszipReady] = useState(false);
+  const [mammothReady, setMammothReady] = useState(false);
 
   useEffect(() => {
     // Load PDF.js
@@ -489,6 +501,12 @@ export default function RawPrep() {
     zipScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
     zipScript.onload = () => setJszipReady(true);
     document.head.appendChild(zipScript);
+
+    // Load Mammoth (for DOCX)
+    const mammothScript = document.createElement('script');
+    mammothScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+    mammothScript.onload = () => setMammothReady(true);
+    document.head.appendChild(mammothScript);
   }, []);
 
 
@@ -522,6 +540,7 @@ export default function RawPrep() {
         <UploadScreen
           pdfjsReady={pdfjsReady}
           jszipReady={jszipReady}
+          mammothReady={mammothReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
@@ -603,24 +622,26 @@ export default function RawPrep() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, jszipReady, mammothReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleFileSelect = async (file) => {
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
-    const validExts = ['pdf', 'pptx', 'txt'];
-    if (!validExts.includes(ext)) { showError('wrong_file', 'Please upload a PDF, PPTX, or TXT file.'); return; }
+    const validExts = ['pdf', 'pptx', 'txt', 'docx', 'doc'];
+    if (!validExts.includes(ext)) { showError('wrong_file', 'Please upload a PDF, PPTX, TXT, or Word document.'); return; }
     if (file.size > 20 * 1024 * 1024) { showError('file_too_large', 'File too large. Use a file under 20MB.'); return; }
     if (ext === 'pdf' && !pdfjsReady) { showError('loading', 'PDF engine still loading...'); return; }
     if (ext === 'pptx' && !jszipReady) { showError('loading', 'PowerPoint engine still loading...'); return; }
+    if ((ext === 'docx' || ext === 'doc') && !mammothReady) { showError('loading', 'Word engine still loading...'); return; }
     
     setUploadedFile(file);
     try {
       let result;
       if (ext === 'pdf') result = await extractPdfText(file);
       else if (ext === 'pptx') result = await extractPptxText(file);
+      else if (ext === 'docx' || ext === 'doc') result = await extractDocxText(file);
       else result = await extractTxtText(file);
       
       if (!result.text || result.text.trim().length < 50) {
@@ -660,9 +681,9 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
               onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
               onClick={() => fileInputRef.current?.click()}
             >
-              <input type="file" accept=".pdf,.pptx,.txt" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
+              <input type="file" accept=".pdf,.pptx,.txt,.docx,.doc" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
               <div style={{ fontSize: 64, marginBottom: 20 }}>📁</div>
-              <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF, PPTX OR TXT</p>
+              <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF, PPTX, DOCX OR TXT</p>
               <p style={{ fontSize: 14, marginTop: 8, opacity: 0.6 }}>DRAG & DROP OR CLICK TO BROWSE</p>
             </div>
           </div>
@@ -671,7 +692,12 @@ function UploadScreen({ pdfjsReady, jszipReady, uploadedFile, setUploadedFile, p
             <div style={{ background: '#000', padding: '16px 20px', border: '2px solid #000', color: '#fff', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                 <div style={{ fontWeight: 900, fontSize: 16, textTransform: 'uppercase', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{uploadedFile.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>{uploadedFile.name.endsWith('.txt') ? '' : `${pdfMeta.pageCount} SLIDES/PAGES · `}{pdfMeta.wordCount} WORDS</div>
+                <div style={{ fontSize: 12, opacity: 0.8, letterSpacing: '0.1em' }}>
+                  {uploadedFile.name.endsWith('.txt') || uploadedFile.name.endsWith('.docx') || uploadedFile.name.endsWith('.doc') 
+                    ? '' 
+                    : `${pdfMeta.pageCount} SLIDES/PAGES · `}
+                  {pdfMeta.wordCount} WORDS
+                </div>
               </div>
               <button 
                 onClick={() => { setUploadedFile(null); setPdfText(''); setPdfMeta({ pageCount: 0, wordCount: 0 }); }}
