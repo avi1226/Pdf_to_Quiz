@@ -1359,7 +1359,25 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                   >
                     {content}
                     {filledChip && !submitted && <button style={{ position: 'absolute', top: -10, right: -10, width: 22, height: 22, borderRadius: 0, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
-                    {submitted && zr && !zr.isCorrect && <div style={{ position: 'absolute', top: '100%', left: 0, width: '100%', textAlign: 'center', fontSize: 12, color: 'var(--correct)', marginTop: 4, fontWeight: 700 }}>{zr.correctLabel}</div>}
+                    {submitted && zr && !zr.isCorrect && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 'calc(100% + 8px)', 
+                        left: '50%', 
+                        transform: 'translateX(-50%)',
+                        width: 'max-content',
+                        textAlign: 'center', 
+                        fontSize: 12, 
+                        color: '#000', 
+                        background: 'var(--correct-bg)',
+                        padding: '2px 8px',
+                        border: '1px solid var(--correct)',
+                        fontWeight: 700,
+                        zIndex: 20
+                      }}>
+                        Ans: {zr.correctLabel}
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -1367,7 +1385,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
               return (
                 <React.Fragment key={node.id}>
                   {node.type === 'start' || node.type === 'end' ? (
-                    <div style={{ background: '#000000', color: 'white', borderRadius: 0, padding: '10px 24px', fontSize: 14, fontWeight: 600, boxShadow: 'none' }}>
+                    <div style={{ background: '#000000', color: 'white', borderRadius: 0, padding: DropZoneCmp ? '20px 24px' : '10px 24px', fontSize: 14, fontWeight: 600, boxShadow: 'none', position: 'relative', marginBottom: (submitted && !DropZoneCmp === false) ? 20 : 0 }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   ) : node.type === 'decision' ? (
@@ -1377,12 +1395,12 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 0, padding: '12px 20px', minWidth: 160, textAlign: 'center', fontSize: 14, fontWeight: 500, boxShadow: 'none' }}>
+                    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 0, padding: DropZoneCmp ? '20px' : '12px 20px', minWidth: 160, textAlign: 'center', fontSize: 14, fontWeight: 500, boxShadow: 'none', position: 'relative', marginBottom: (submitted && DropZoneCmp) ? 20 : 0 }}>
                       {DropZoneCmp || node.display_text}
                     </div>
                   )}
                   {i < question.nodes.length - 1 && (
-                    <div style={{ width: 2, height: 36, background: 'var(--border-strong)', margin: '0 auto', position: 'relative' }}>
+                    <div style={{ width: 2, height: 60, background: 'var(--border-strong)', margin: '0 auto', position: 'relative' }}>
                       <div style={{ position: 'absolute', bottom: -6, left: -5, width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid var(--border-strong)' }} />
                     </div>
                   )}
