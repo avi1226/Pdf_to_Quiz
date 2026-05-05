@@ -127,7 +127,7 @@ const parseJSON = (raw) => {
   return JSON.parse(cleaned);
 };
 
-const extractPdfText = async (file) => {
+const extractPdfText = async (file, onOcrStart) => {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let fullText = '';
@@ -137,6 +137,30 @@ const extractPdfText = async (file) => {
     const pageText = content.items.map(item => item.str).join(' ');
     fullText += pageText + '\n';
   }
+
+  // If no text found, it might be a scanned/handwritten PDF. Try OCR.
+  if (fullText.trim().length < 100 && window.Tesseract) {
+    if (onOcrStart) onOcrStart();
+    fullText = '';
+    const worker = await window.Tesseract.createWorker('eng');
+    
+    // Limit OCR to first 10 pages for performance
+    const pagesToProcess = Math.min(pdf.numPages, 10);
+    for (let i = 1; i <= pagesToProcess; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+      const { data: { text } } = await worker.recognize(canvas);
+      fullText += text + '\n';
+    }
+    await worker.terminate();
+  }
+
   return {
     text: fullText.slice(0, 60000),
     pageCount: pdf.numPages,
@@ -485,6 +509,7 @@ export default function RawPrep() {
   const [pdfjsReady, setPdfjsReady] = useState(false);
   const [jszipReady, setJszipReady] = useState(false);
   const [mammothReady, setMammothReady] = useState(false);
+  const [tesseractReady, setTesseractReady] = useState(false);
 
   useEffect(() => {
     // Load PDF.js
@@ -507,6 +532,12 @@ export default function RawPrep() {
     mammothScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
     mammothScript.onload = () => setMammothReady(true);
     document.head.appendChild(mammothScript);
+
+    // Load Tesseract.js (for OCR)
+    const tesseractScript = document.createElement('script');
+    tesseractScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.3/tesseract.min.js';
+    tesseractScript.onload = () => setTesseractReady(true);
+    document.head.appendChild(tesseractScript);
   }, []);
 
 
@@ -541,6 +572,7 @@ export default function RawPrep() {
           pdfjsReady={pdfjsReady}
           jszipReady={jszipReady}
           mammothReady={mammothReady}
+          tesseractReady={tesseractReady}
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
@@ -622,9 +654,11 @@ export default function RawPrep() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ pdfjsReady, jszipReady, mammothReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [ocrActive, setOcrActive] = useState(false);
 
   const handleFileSelect = async (file) => {
     if (!file) return;
@@ -637,9 +671,11 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, uploadedFile, setU
     if ((ext === 'docx' || ext === 'doc') && !mammothReady) { showError('loading', 'Word engine still loading...'); return; }
     
     setUploadedFile(file);
+    setIsExtracting(true);
+    setOcrActive(false);
     try {
       let result;
-      if (ext === 'pdf') result = await extractPdfText(file);
+      if (ext === 'pdf') result = await extractPdfText(file, () => setOcrActive(true));
       else if (ext === 'pptx') result = await extractPptxText(file);
       else if (ext === 'docx' || ext === 'doc') result = await extractDocxText(file);
       else result = await extractTxtText(file);
@@ -654,6 +690,9 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, uploadedFile, setU
     } catch (err) {
       showError('extract_error', 'Could not read file: ' + err.message);
       setUploadedFile(null);
+    } finally {
+      setIsExtracting(false);
+      setOcrActive(false);
     }
   };
 
@@ -682,9 +721,19 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, uploadedFile, setU
               onClick={() => fileInputRef.current?.click()}
             >
               <input type="file" accept=".pdf,.pptx,.txt,.docx,.doc" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
-              <div style={{ fontSize: 64, marginBottom: 20 }}>📁</div>
-              <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF, PPTX, DOCX OR TXT</p>
-              <p style={{ fontSize: 14, marginTop: 8, opacity: 0.6 }}>DRAG & DROP OR CLICK TO BROWSE</p>
+              {isExtracting ? (
+                <div className="text-center">
+                  <div style={{ width: 48, height: 48, border: '4px solid #000', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite', margin: '0 auto 1.5rem' }} />
+                  <p style={{ fontWeight: 900, fontSize: 16 }}>{ocrActive ? 'HANDWRITING OCR ACTIVE...' : 'READING DOCUMENT...'}</p>
+                  <p style={{ fontSize: 12, marginTop: 8, opacity: 0.6 }}>{ocrActive ? 'THIS MAY TAKE A FEW MOMENTS' : 'PLEASE WAIT'}</p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 64, marginBottom: 20 }}>📁</div>
+                  <p style={{ fontWeight: 900, fontSize: 18 }}>UPLOAD PDF, PPTX, DOCX OR TXT</p>
+                  <p style={{ fontSize: 14, marginTop: 8, opacity: 0.6 }}>DRAG & DROP OR CLICK TO BROWSE</p>
+                </>
+              )}
             </div>
           </div>
         ) : (
