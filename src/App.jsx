@@ -366,111 +366,120 @@ Return JSON:
 
 
 const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+  // Clean text especially for OCR output
+  const cleanedText = text
+    .replace(/\n+/g, ' ')
+    .replace(/\s\s+/g, ' ')
+    .trim();
+
+  const sentences = cleanedText.match(/[^.!?]+[.!?]+/g) || [];
   const filtered = sentences
     .map(s => s.trim())
-    .filter(s => s.split(' ').length > 8 && s.length < 250);
+    .filter(s => s.split(' ').length > 8 && s.length < 300);
   
-  const shuffled = shuffle(filtered).slice(0, count);
+  // If we don't have enough sentences, try splitting by line if it's OCR
+  let sources = filtered;
+  if (sources.length < count) {
+    sources = cleanedText.split(/[.!?\n]/).map(s => s.trim()).filter(s => s.length > 20);
+  }
+
+  const shuffled = shuffle(sources).slice(0, count);
+  
+  // Extract potential keywords from the whole text for better decoys
+  const allWords = cleanedText.replace(/[.!?(),;:"']/g, '').split(/\s+/);
+  const keyTerms = [...new Set(allWords.filter(w => w.length > 6))];
   
   return {
-    quiz_title: "RawPrep Session",
-    topics_covered: ["Key Concepts"],
+    quiz_title: "Document Analysis Session",
+    topics_covered: ["Key Concepts", "Content Details"],
     questions: shuffled.map((s, i) => {
-      // Rotate through the user's selected types
       const type = types[i % types.length];
-      const words = s.replace(/[.!?(),;:]/g, '').split(/\s+/);
+      const words = s.replace(/[.!?(),;:"']/g, '').split(/\s+/);
       const candidates = words.filter(w => w.length > 5);
       const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : words[0];
 
       if (type === 'fill_blank') {
-        const decoys = shuffle(words.filter(w => w.length > 5 && w.toLowerCase() !== target.toLowerCase())).slice(0, 3);
-        while (decoys.length < 3) decoys.push(["Term", "Concept", "Context", "Detail"][decoys.length]);
+        const decoys = shuffle(keyTerms.filter(t => t.toLowerCase() !== target.toLowerCase())).slice(0, 3);
+        while (decoys.length < 3) decoys.push(["Term", "Concept", "Context"][decoys.length]);
         return {
           id: `q-${i}`,
           type: 'fill_blank',
-          topic_tag: 'Vocabulary',
+          topic_tag: 'Key Terms',
           difficulty: 'medium',
           page_ref: 'Contextual',
-          question: 'Drag the correct term into the blank space:',
+          question: 'Complete the sentence with the correct term:',
           sentence: s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___'),
           correct_answer: target,
           options: shuffle([target, ...decoys]),
-          explanation: `The full context is: "${s}"`
+          explanation: `Full context: "${s}"`
         };
       } else if (type === 'true_false') {
         const isTrue = Math.random() > 0.5;
         let questionText = s;
         let correctAnswer = "True";
         if (!isTrue) {
-          const wordsToChange = words.filter(w => w.length > 4);
+          const wordsToChange = words.filter(w => w.length > 5);
           if (wordsToChange.length > 0) {
             const wordToReplace = wordsToChange[Math.floor(Math.random() * wordsToChange.length)];
-            questionText = s.replace(new RegExp(`\\b${wordToReplace}\\b`, 'i'), 'something else');
+            const replacement = keyTerms.find(t => t !== wordToReplace) || "alternative concept";
+            questionText = s.replace(new RegExp(`\\b${wordToReplace}\\b`, 'i'), replacement);
             correctAnswer = "False";
           }
         }
         return {
           id: `q-${i}`,
           type: 'true_false',
-          topic_tag: 'Fact Check',
+          topic_tag: 'Fact Verification',
           difficulty: 'easy',
           page_ref: 'Contextual',
-          question: `Is the following statement true or false based on the text: "${questionText}"`,
+          question: `Based on the text, is this statement true? "${questionText}"`,
           correct_answer: correctAnswer,
           explanation: `The original text states: "${s}"`
         };
-      } else if (type === 'short_answer') {
-        return {
-          id: `q-${i}`,
-          type: 'short_answer',
-          topic_tag: 'Comprehension',
-          difficulty: 'hard',
-          page_ref: 'Critical Thinking',
-          question: `Based on the text, explain the significance of: "${s}"`,
-          model_answer: s,
-          key_points: words.filter(w => w.length > 6).slice(0, 3),
-          explanation: `Your answer should mention key concepts from: "${s}"`
-        };
       } else if (type === 'diagram') {
-        // Simple placeholder flowchart logic for offline
+        // Dynamic diagram based on actual content
+        const slideTerms = shuffle(candidates).slice(0, 3);
+        while (slideTerms.length < 3) slideTerms.push(keyTerms[Math.floor(Math.random() * keyTerms.length)] || "Concept");
+        
+        const [term1, term2, term3] = slideTerms;
+        const decoys = shuffle(keyTerms.filter(t => !slideTerms.includes(t))).slice(0, 2);
+
         return {
           id: `q-${i}`,
           type: 'diagram',
-          topic_tag: 'Visual Learning',
+          topic_tag: 'Process Flow',
           difficulty: 'hard',
-          page_ref: 'Logical Flow',
-          question: 'Organize these components of the concept into the correct order:',
+          page_ref: 'Visual Logic',
+          question: 'Drag the correct terms into the process sequence described in the text:',
           nodes: [
-            { id: 'n1', type: 'start', display_text: 'START', position: { row: 1, col: 1 }, connects_to: ['n2'] },
+            { id: 'n1', type: 'start', display_text: term1, position: { row: 1, col: 1 }, connects_to: ['n2'] },
             { id: 'n2', type: 'process', display_text: '___', position: { row: 2, col: 1 }, connects_to: ['n3'] },
-            { id: 'n3', type: 'end', display_text: 'END', position: { row: 3, col: 1 }, connects_to: [] }
+            { id: 'n3', type: 'end', display_text: '___', position: { row: 3, col: 1 }, connects_to: [] }
           ],
           drop_zones: [
-            { id: 'z1', node_id: 'n2', number: 1, correct_chip_id: 'c1' }
+            { id: 'z1', node_id: 'n2', number: 1, correct_chip_id: 'c1' },
+            { id: 'z2', node_id: 'n3', number: 2, correct_chip_id: 'c2' }
           ],
           answer_chips: shuffle([
-            { id: 'c1', label: target, correct_zone_id: 'z1' },
-            { id: 'c2', label: 'Noise', correct_zone_id: null },
-            { id: 'c3', label: 'Distraction', correct_zone_id: null }
+            { id: 'c1', label: term2, correct_zone_id: 'z1' },
+            { id: 'c2', label: term3, correct_zone_id: 'z2' },
+            ...decoys.map((d, di) => ({ id: `d${di}`, label: d, correct_zone_id: null }))
           ]),
-          explanation: `This follows the sequence described in: "${s}"`
+          explanation: `This sequence is derived from the following context: "${s}"`
         };
       } else {
-        // Default to MCQ
-        const decoys = shuffle(words.filter(w => w.length > 5 && w.toLowerCase() !== target.toLowerCase())).slice(0, 3);
-        while (decoys.length < 3) decoys.push(["Context", "Detail", "Evidence", "Subject"][decoys.length]);
-        
+        // MCQ
+        const decoys = shuffle(keyTerms.filter(t => t.toLowerCase() !== target.toLowerCase())).slice(0, 3);
         return {
           id: `q-${i}`,
           type: 'mcq',
-          topic_tag: 'General',
+          topic_tag: 'Comprehension',
           difficulty: 'medium',
           page_ref: 'Contextual',
-          question: `Which term correctly completes this thought: "${s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___')}"?`,
+          question: `Which term correctly completes this statement: "${s.replace(new RegExp(`\\b${target}\\b`, 'i'), '___')}"?`,
           options: shuffle([target, ...decoys]),
           correct_answer: target,
-          explanation: `The text says: "${s}"`
+          explanation: `Source text: "${s}"`
         };
       }
     })
