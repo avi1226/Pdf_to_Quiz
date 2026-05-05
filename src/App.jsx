@@ -128,44 +128,63 @@ const parseJSON = (raw) => {
 };
 
 const extractPdfText = async (file, onOcrStart) => {
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items.map(item => item.str).join(' ');
-    fullText += pageText + '\n';
-  }
-
-  // If no text found, it might be a scanned/handwritten PDF. Try OCR.
-  if (fullText.trim().length < 100 && window.Tesseract) {
-    if (onOcrStart) onOcrStart();
-    fullText = '';
-    const worker = await window.Tesseract.createWorker('eng');
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
     
-    // Limit OCR to first 10 pages for performance
-    const pagesToProcess = Math.min(pdf.numPages, 10);
-    for (let i = 1; i <= pagesToProcess; i++) {
+    console.log(`PDF loaded. Pages: ${pdf.numPages}`);
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
-      const { data: { text } } = await worker.recognize(canvas);
-      fullText += text + '\n';
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      fullText += pageText + ' ';
     }
-    await worker.terminate();
-  }
 
-  return {
-    text: fullText.slice(0, 60000),
-    pageCount: pdf.numPages,
-    wordCount: fullText.split(/\s+/).length
-  };
+    // Improved detection for scanned/handwritten PDFs
+    // If text is very sparse (e.g., less than 20 chars per page on average), trigger OCR
+    const avgCharsPerPage = fullText.trim().length / pdf.numPages;
+    console.log(`Extracted text length: ${fullText.trim().length}, Avg per page: ${avgCharsPerPage}`);
+
+    if (avgCharsPerPage < 30 && window.Tesseract) {
+      console.log("Sparse text detected. Starting OCR...");
+      if (onOcrStart) onOcrStart();
+      fullText = '';
+      
+      const worker = await window.Tesseract.createWorker('eng', 1, {
+        logger: m => console.log(m)
+      });
+      
+      const pagesToProcess = Math.min(pdf.numPages, 10);
+      for (let i = 1; i <= pagesToProcess; i++) {
+        console.log(`Processing OCR for page ${i}...`);
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        const { data: { text } } = await worker.recognize(canvas);
+        fullText += text + '\n';
+      }
+      await worker.terminate();
+    }
+
+    const cleanText = fullText.trim();
+    const words = cleanText.split(/\s+/).filter(w => w.length > 0);
+    
+    return {
+      text: cleanText.slice(0, 60000),
+      pageCount: pdf.numPages,
+      wordCount: words.length
+    };
+  } catch (err) {
+    console.error("PDF Extraction Error:", err);
+    throw err;
+  }
 };
 
 const extractPptxText = async (file) => {
