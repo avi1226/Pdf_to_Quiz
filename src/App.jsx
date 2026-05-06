@@ -127,72 +127,124 @@ const parseJSON = (raw) => {
   return JSON.parse(cleaned);
 };
 
-// ── OCR Text Quality Helpers ──
+// ── Dictionary for OCR Spell Correction ──
+const DICT_WORDS = new Set(("the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us is are was were been has had did does doing would should could may might shall must need dare ought used able the and that have with this will from they been have some what about which when make like time just know take year good come over after give most also back look think well find here thing many some still between both under each last long great little own just old right big high different small large next early young important few public bad same able").split(" "));
+// Academic & CS terms
+"function variable constant method class object array string integer boolean return value parameter argument type data structure algorithm program code system process memory input output define declaration expression statement operator operand condition loop iteration recursion pointer reference address stack queue tree graph node edge binary search sort merge insert delete update create read write file error exception handle thread network protocol database table query index key primary foreign relation schema model view controller interface abstract inherit polymorphism encapsulation module package library framework compile interpret execute runtime syntax semantic logic digital analog signal circuit register processor instruction architecture component design pattern factory singleton observer strategy command state machine automaton grammar language compiler parser lexer token symbol scope binding closure prototype constructor destructor allocation garbage collection concurrent parallel distributed synchronous asynchronous callback promise async await event handler listener trigger middleware routing endpoint request response header body status authentication authorization encryption hash certificate socket stream buffer cache proxy server client host port domain path resource service microservice container virtual deploy infrastructure cloud storage compute bandwidth latency throughput availability scalability reliability performance testing debug monitor logging trace profile benchmark".split(" ").forEach(w => DICT_WORDS.add(w));
+// Common academic words
+"analysis theory concept principle application methodology research experiment hypothesis conclusion evidence evaluation comparison definition explanation description classification category characteristic property feature aspect element factor component function role purpose effect result consequence impact influence significance importance relevant essential critical fundamental basic primary secondary specific general particular individual overall comprehensive detailed accurate precise consistent reliable valid appropriate suitable effective efficient sufficient necessary required optional available current previous following additional further alternative potential possible probable likely certain various several multiple numerous frequent common typical standard normal regular traditional conventional modern contemporary advanced intermediate introduction overview summary review discussion argument perspective approach technique procedure practice example illustration demonstration representation interpretation understanding knowledge information communication technology science mathematics engineering physics chemistry biology psychology sociology economics history philosophy education environment society culture".split(" ").forEach(w => DICT_WORDS.add(w));
+
+const levenshtein = (a, b) => {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const d = Array.from({length: m + 1}, (_, i) => {
+    const row = new Array(n + 1);
+    row[0] = i;
+    return row;
+  });
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i-1].toLowerCase() === b[j-1].toLowerCase() ? 0 : 1;
+      d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + cost);
+    }
+  }
+  return d[m][n];
+};
+
+const correctOcrWord = (word, dictionary, maxDist) => {
+  if (word.length < 3) return word;
+  const lower = word.toLowerCase();
+  if (dictionary.has(lower)) return word; // already correct
+  
+  let bestMatch = null, bestDist = maxDist + 1;
+  for (const dictWord of dictionary) {
+    if (Math.abs(dictWord.length - lower.length) > maxDist) continue;
+    const dist = levenshtein(lower, dictWord);
+    if (dist < bestDist) { bestDist = dist; bestMatch = dictWord; }
+    if (dist === 1) break; // close enough
+  }
+  
+  if (bestMatch && bestDist <= maxDist) {
+    // Preserve original capitalization pattern
+    if (word[0] === word[0].toUpperCase()) {
+      return bestMatch.charAt(0).toUpperCase() + bestMatch.slice(1);
+    }
+    return bestMatch;
+  }
+  return word;
+};
+
+const correctOcrText = (text) => {
+  // Build document dictionary from frequently appearing words
+  const wordFreq = {};
+  text.split(/\s+/).forEach(w => {
+    const clean = w.toLowerCase().replace(/[^a-z]/g, '');
+    if (clean.length >= 3) wordFreq[clean] = (wordFreq[clean] || 0) + 1;
+  });
+  
+  // Words appearing 2+ times are likely correct
+  const docDict = new Set(DICT_WORDS);
+  Object.entries(wordFreq).forEach(([w, count]) => {
+    if (count >= 2) docDict.add(w);
+  });
+  
+  console.log(`Spell correction: ${docDict.size} dictionary words, ${Object.keys(wordFreq).length} unique OCR words`);
+  
+  let corrected = 0;
+  const result = text.replace(/\b[a-zA-Z]{3,}\b/g, (match) => {
+    const maxDist = match.length <= 4 ? 1 : match.length <= 7 ? 2 : 3;
+    const fixed = correctOcrWord(match, docDict, maxDist);
+    if (fixed !== match) { corrected++; console.log(`  OCR fix: "${match}" → "${fixed}"`); }
+    return fixed;
+  });
+  
+  console.log(`Spell correction: fixed ${corrected} words`);
+  return result;
+};
+
 const cleanOcrText = (rawText) => {
-  // Split into lines and clean each one
   let lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   
   let cleaned = lines.map(line => {
-    // Fix common OCR substitutions
-    let fixed = line
-      .replace(/[|l](?=[A-Z])/g, 'I')   // |T -> IT, lT -> IT
-      .replace(/0(?=[a-z])/g, 'o')       // 0f -> of
-      .replace(/1(?=[a-z]{2})/g, 'l')    // 1ike -> like
-      .replace(/\s+/g, ' ')             // collapse spaces
-      .replace(/[^\x20-\x7E]/g, '')     // remove non-printable chars
-      .replace(/\s*[>:;]+\s*/g, ' ')    // remove stray symbols like > : ;
-      .replace(/\s*[-=]+>\s*/g, ' ')    // remove arrows ->  =>
-      .replace(/\(\s*\)/g, '')          // remove empty parens
-      .replace(/\[\s*\]/g, '')          // remove empty brackets
-      .replace(/\s{2,}/g, ' ')          // collapse again
+    return line
+      .replace(/[|l](?=[A-Z])/g, 'I')
+      .replace(/0(?=[a-z])/g, 'o')
+      .replace(/1(?=[a-z]{2})/g, 'l')
+      .replace(/\s+/g, ' ')
+      .replace(/[^\x20-\x7E]/g, '')
+      .replace(/\s*[>:;]+\s*/g, ' ')
+      .replace(/\s*[-=]+>\s*/g, ' ')
+      .replace(/\(\s*\)/g, '')
+      .replace(/\[\s*\]/g, '')
+      .replace(/\s{2,}/g, ' ')
       .trim();
-    return fixed;
-  }).filter(line => line.length > 0);
+  }).filter(l => l.length > 0);
   
-  // Filter out garbage lines
   cleaned = cleaned.filter(line => {
     const words = line.split(/\s+/);
-    if (words.length < 3) return false; // too short
-    
-    // Count how many words look like real English words (mostly letters, 2+ chars)
-    const realWords = words.filter(w => {
-      if (w.length < 2) return false;
-      const letterRatio = (w.match(/[a-zA-Z]/g) || []).length / w.length;
-      return letterRatio >= 0.7; // at least 70% letters
-    });
-    
-    // At least 60% of words should look like real words
-    const realRatio = realWords.length / words.length;
-    if (realRatio < 0.6) return false;
-    
-    // Check for excessive uppercase gibberish (like "OY N D> D;D")
-    const upperGibberish = (line.match(/\b[A-Z]{1,2}\b/g) || []).length;
-    if (upperGibberish > words.length * 0.5 && words.length > 4) return false;
-    
-    // Check for excessive special chars
-    const specialCharRatio = (line.match(/[^a-zA-Z0-9\s.,!?'"()-]/g) || []).length / line.length;
-    if (specialCharRatio > 0.2) return false;
-    
+    if (words.length < 3) return false;
+    const realWords = words.filter(w => w.length >= 2 && (w.match(/[a-zA-Z]/g) || []).length / w.length >= 0.7);
+    if (realWords.length / words.length < 0.5) return false;
+    const specialRatio = (line.match(/[^a-zA-Z0-9\s.,!?'"()-]/g) || []).length / line.length;
+    if (specialRatio > 0.25) return false;
     return true;
   });
   
-  return cleaned.join('. ').replace(/\.\s*\./g, '.').trim();
+  // Join, then apply spell correction
+  let text = cleaned.join('. ').replace(/\.\s*\./g, '.').trim();
+  text = correctOcrText(text);
+  return text;
 };
 
-// Check if a sentence is readable enough for quiz generation
 const isSentenceReadable = (sentence) => {
   const words = sentence.split(/\s+/);
   if (words.length < 4) return false;
-  
-  // Count real-looking words (3+ chars, mostly alphabetic)
-  const goodWords = words.filter(w => {
-    if (w.length < 3) return false;
-    const letters = (w.match(/[a-zA-Z]/g) || []).length;
-    return letters / w.length >= 0.75;
-  });
-  
-  return goodWords.length >= words.length * 0.65;
+  const goodWords = words.filter(w => w.length >= 3 && (w.match(/[a-zA-Z]/g) || []).length / w.length >= 0.75);
+  return goodWords.length >= words.length * 0.6;
 };
+
 
 const preprocessCanvasForOCR = (canvas) => {
   const ctx = canvas.getContext('2d');
