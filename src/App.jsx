@@ -127,11 +127,12 @@ const parseJSON = (raw) => {
   return JSON.parse(cleaned);
 };
 
-const extractPdfText = async (file, onOcrStart) => {
+const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let fullText = '';
+    const extractedDiagrams = [];
     
     console.log(`PDF loaded. Pages: ${pdf.numPages}`);
     
@@ -140,33 +141,76 @@ const extractPdfText = async (file, onOcrStart) => {
       const content = await page.getTextContent();
       const pageText = content.items.map(item => item.str).join(' ');
       fullText += pageText + ' ';
+
+      // Extract Diagrams (Images)
+      try {
+        const ops = await page.getOperatorList();
+        for (let j = 0; j < ops.fnArray.length; j++) {
+          if (ops.fnArray[j] === window.pdfjsLib.OPS.paintImageXObject || 
+              ops.fnArray[j] === window.pdfjsLib.OPS.paintInlineImageXObject) {
+            
+            const objId = ops.argsArray[j][0];
+            const image = await page.commonObjs.get(objId) || await page.objs.get(objId);
+            
+            if (image && image.width > 200 && image.height > 200) { // Only large images
+              const canvas = document.createElement('canvas');
+              canvas.width = image.width;
+              canvas.height = image.height;
+              const ctx = canvas.getContext('2d');
+              
+              if (image.data) {
+                const imageData = ctx.createImageData(image.width, image.height);
+                if (image.data.length === image.width * image.height * 3) {
+                  const data = imageData.data;
+                  for (let k = 0, l = 0; k < data.length; k += 4, l += 3) {
+                    data[k] = image.data[l];
+                    data[k+1] = image.data[l+1];
+                    data[k+2] = image.data[l+2];
+                    data[k+3] = 255;
+                  }
+                } else {
+                  imageData.data.set(image.data);
+                }
+                ctx.putImageData(imageData, 0, 0);
+                extractedDiagrams.push({
+                  id: `diag-${i}-${j}`,
+                  src: canvas.toDataURL('image/png'),
+                  page: i
+                });
+                if (onDiagramFound) onDiagramFound();
+              }
+            }
+          }
+        }
+      } catch (diagErr) {
+        console.warn("Diagram extraction skipped for page", i, diagErr);
+      }
     }
 
-    // Improved detection for scanned/handwritten PDFs
-    // If text is very sparse (e.g., less than 20 chars per page on average), trigger OCR
     const avgCharsPerPage = fullText.trim().length / pdf.numPages;
-    console.log(`Extracted text length: ${fullText.trim().length}, Avg per page: ${avgCharsPerPage}`);
-
-    if (avgCharsPerPage < 30 && window.Tesseract) {
-      console.log("Sparse text detected. Starting OCR...");
+    if (avgCharsPerPage < 40 && window.Tesseract) {
       if (onOcrStart) onOcrStart();
       fullText = '';
-      
-      const worker = await window.Tesseract.createWorker('eng', 1, {
-        logger: m => console.log(m)
-      });
-      
-      const pagesToProcess = Math.min(pdf.numPages, 10);
+      const worker = await window.Tesseract.createWorker('eng', 1);
+      const pagesToProcess = Math.min(pdf.numPages, 15);
       for (let i = 1; i <= pagesToProcess; i++) {
-        console.log(`Processing OCR for page ${i}...`);
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2 });
+        const viewport = page.getViewport({ scale: 3.5 });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
-        
         await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        for (let j = 0; j < data.length; j += 4) {
+          const brightness = (data[j] + data[j + 1] + data[j + 2]) / 3;
+          const newVal = (brightness - 128) * 1.5 + 128;
+          const final = newVal < 0 ? 0 : newVal > 255 ? 255 : newVal;
+          data[j] = data[j + 1] = data[j + 2] = final;
+        }
+        context.putImageData(imageData, 0, 0);
         const { data: { text } } = await worker.recognize(canvas);
         fullText += text + '\n';
       }
@@ -174,12 +218,11 @@ const extractPdfText = async (file, onOcrStart) => {
     }
 
     const cleanText = fullText.trim();
-    const words = cleanText.split(/\s+/).filter(w => w.length > 0);
-    
     return {
       text: cleanText.slice(0, 60000),
       pageCount: pdf.numPages,
-      wordCount: words.length
+      wordCount: cleanText.split(/\s+/).length,
+      diagrams: extractedDiagrams
     };
   } catch (err) {
     console.error("PDF Extraction Error:", err);
@@ -365,38 +408,56 @@ Return JSON:
 // ═══════════════════════════════════════════════
 
 
-const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
-  // Clean text especially for OCR output
-  const cleanedText = text
-    .replace(/\n+/g, ' ')
-    .replace(/\s\s+/g, ' ')
-    .trim();
-
+const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank'], diagrams = []) => {
+  const cleanedText = text.replace(/\n+/g, ' ').replace(/\s\s+/g, ' ').trim();
   const sentences = cleanedText.match(/[^.!?]+[.!?]+/g) || [];
-  const filtered = sentences
-    .map(s => s.trim())
-    .filter(s => s.split(' ').length > 8 && s.length < 300);
+  const filtered = sentences.map(s => s.trim()).filter(s => s.split(' ').length > 8 && s.length < 300);
   
-  // If we don't have enough sentences, try splitting by line if it's OCR
   let sources = filtered;
   if (sources.length < count) {
     sources = cleanedText.split(/[.!?\n]/).map(s => s.trim()).filter(s => s.length > 20);
   }
 
   const shuffled = shuffle(sources).slice(0, count);
-  
-  // Extract potential keywords from the whole text for better decoys
   const allWords = cleanedText.replace(/[.!?(),;:"']/g, '').split(/\s+/);
   const keyTerms = [...new Set(allWords.filter(w => w.length > 6))];
   
+  let diagramIndex = 0;
+
   return {
-    quiz_title: "Document Analysis Session",
-    topics_covered: ["Key Concepts", "Content Details"],
+    quiz_title: "Intelligent Document Quiz",
+    topics_covered: ["Key Concepts", "Visual Analysis"],
     questions: shuffled.map((s, i) => {
       const type = types[i % types.length];
       const words = s.replace(/[.!?(),;:"']/g, '').split(/\s+/);
       const candidates = words.filter(w => w.length > 5);
       const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : words[0];
+
+      if (type === 'diagram' && diagrams.length > 0 && diagramIndex < diagrams.length) {
+        const diag = diagrams[diagramIndex++];
+        return {
+          id: `q-${i}`,
+          type: 'diagram',
+          topic_tag: 'Visual Analysis',
+          difficulty: 'hard',
+          page_ref: `Page ${diag.page}`,
+          question: 'Identify the correct labels on the diagram below by dragging them to their correct locations.',
+          image: diag.src,
+          drop_zones: diag.labels.map((l, idx) => ({
+            id: `z-${idx}`,
+            node_id: `n-${idx}`,
+            number: idx + 1,
+            correct_chip_id: `c-${idx}`,
+            bbox: l.bbox
+          })),
+          answer_chips: shuffle(diag.labels.map((l, idx) => ({
+            id: `c-${idx}`,
+            label: l.text,
+            correct_zone_id: `z-${idx}`
+          }))),
+          explanation: `This diagram from page ${diag.page} contains key terminology and structural relationships discussed in the text.`
+        };
+      }
 
       if (type === 'fill_blank') {
         const decoys = shuffle(keyTerms.filter(t => t.toLowerCase() !== target.toLowerCase())).slice(0, 3);
@@ -437,13 +498,11 @@ const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
           explanation: `The original text states: "${s}"`
         };
       } else if (type === 'diagram') {
-        // Dynamic diagram based on actual content
+        // Fallback for synthetic diagram if no extracted diagrams exist
         const slideTerms = shuffle(candidates).slice(0, 3);
         while (slideTerms.length < 3) slideTerms.push(keyTerms[Math.floor(Math.random() * keyTerms.length)] || "Concept");
-        
         const [term1, term2, term3] = slideTerms;
         const decoys = shuffle(keyTerms.filter(t => !slideTerms.includes(t))).slice(0, 2);
-
         return {
           id: `q-${i}`,
           type: 'diagram',
@@ -467,8 +526,19 @@ const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank']) => {
           ]),
           explanation: `This sequence is derived from the following context: "${s}"`
         };
+      } else if (type === 'short_answer') {
+        return {
+          id: `q-${i}`,
+          type: 'short_answer',
+          topic_tag: 'Conceptual',
+          difficulty: 'hard',
+          page_ref: 'Contextual',
+          question: `Explain the following concept based on the document: "${s}"`,
+          model_answer: s,
+          key_points: candidates.slice(0, 3),
+          explanation: `The text discusses this as follows: "${s}"`
+        };
       } else {
-        // MCQ
         const decoys = shuffle(keyTerms.filter(t => t.toLowerCase() !== target.toLowerCase())).slice(0, 3);
         return {
           id: `q-${i}`,
@@ -515,6 +585,7 @@ export default function RawPrep() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [pdfText, setPdfText] = useState('');
   const [pdfMeta, setPdfMeta] = useState({ pageCount: 0, wordCount: 0 });
+  const [extractedDiagrams, setExtractedDiagrams] = useState([]);
   const [config, setConfig] = useState({
     questionCount: 10,
     difficulty: 'medium',
@@ -611,11 +682,26 @@ export default function RawPrep() {
             setError(null);
             setLoadingMessage("Analyzing document...");
             
-            setTimeout(() => {
+            setTimeout(async () => {
               try {
-                const parsed = generateLocalQuestions(pdfText, config.questionCount, config.types);
+                let processedDiagrams = [];
+                if (extractedDiagrams.length > 0 && window.Tesseract) {
+                  setLoadingMessage("Scanning diagrams for interactive labels...");
+                  const worker = await window.Tesseract.createWorker('eng', 1);
+                  const diagsToProcess = extractedDiagrams.slice(0, 3);
+                  for (const diag of diagsToProcess) {
+                    const { data } = await worker.recognize(diag.src);
+                    const labels = data.words.filter(w => w.confidence > 65 && w.text.length > 2 && w.text.length < 15).slice(0, 5);
+                    if (labels.length >= 2) {
+                      processedDiagrams.push({ ...diag, labels: labels.map((l, idx) => ({ id: `l-${idx}`, text: l.text, bbox: l.bbox })) });
+                    }
+                  }
+                  await worker.terminate();
+                }
+
+                const parsed = generateLocalQuestions(pdfText, config.questionCount, config.types, processedDiagrams);
                 if (!parsed || !parsed.questions || parsed.questions.length === 0) {
-                  throw new Error("No questions could be generated from this document content. Try a longer document or different settings.");
+                  throw new Error("No questions could be generated. Try different settings.");
                 }
                 setQuestions(parsed.questions);
                 setQuizTitle(parsed.quiz_title);
@@ -625,10 +711,10 @@ export default function RawPrep() {
                 setSubmitted({});
                 setScreen('quiz');
               } catch (err) {
-                showError('local_error', 'Could not process PDF: ' + err.message);
+                showError('local_error', 'Generation failed: ' + err.message);
                 setScreen('upload');
               }
-            }, 2000);
+            }, 100);
           }} />
       )}
 
@@ -703,7 +789,7 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, up
     setOcrActive(false);
     try {
       let result;
-      if (ext === 'pdf') result = await extractPdfText(file, () => setOcrActive(true));
+      if (ext === 'pdf') result = await extractPdfText(file, () => setOcrActive(true), () => {});
       else if (ext === 'pptx') result = await extractPptxText(file);
       else if (ext === 'docx' || ext === 'doc') result = await extractDocxText(file);
       else result = await extractTxtText(file);
@@ -715,6 +801,7 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, up
       }
       setPdfText(result.text);
       setPdfMeta({ pageCount: result.pageCount, wordCount: result.wordCount });
+      if (result.diagrams) setExtractedDiagrams(result.diagrams);
     } catch (err) {
       showError('extract_error', 'Could not read file: ' + err.message);
       setUploadedFile(null);
@@ -1203,6 +1290,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
   const [dragState, setDragState] = useState({ draggingChipId: null, overZoneId: null });
   const [selectedChipId, setSelectedChipId] = useState(null);
   const [zoneResults, setZoneResults] = useState([]);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     if (!submitted && question.answer_chips) {
@@ -1226,6 +1314,9 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
     e.preventDefault();
     const chipId = e.dataTransfer.getData('chipId');
     const fromZoneId = e.dataTransfer.getData('fromZoneId');
+    
+    const targetZone = dropZones.find(z => z.id === targetZoneId);
+    const existingChipId = targetZone?.placedChipId;
 
     setDropZones(prev => prev.map(z => {
       if (z.id === targetZoneId) return { ...z, placedChipId: chipId };
@@ -1235,8 +1326,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
 
     setChipBank(prev => prev.map(c => {
       if (c.id === chipId) return { ...c, placedInZoneId: targetZoneId };
-      const targetZone = dropZones.find(z => z.id === targetZoneId);
-      if (targetZone?.placedChipId === c.id) return { ...c, placedInZoneId: null };
+      if (c.id === existingChipId) return { ...c, placedInZoneId: null };
       return c;
     }));
     setDragState({ draggingChipId: null, overZoneId: null });
@@ -1262,6 +1352,9 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
       return;
     }
     const chipId = selectedChipId;
+    const targetZone = dropZones.find(z => z.id === zoneId);
+    const existingChipId = targetZone?.placedChipId;
+
     setDropZones(prev => prev.map(z => {
       if (z.id === zoneId) return { ...z, placedChipId: chipId };
       if (z.placedChipId === chipId) return { ...z, placedChipId: null };
@@ -1269,8 +1362,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
     }));
     setChipBank(prev => prev.map(c => {
       if (c.id === chipId) return { ...c, placedInZoneId: zoneId };
-      const targetZone = dropZones.find(z => z.id === zoneId);
-      if (targetZone?.placedChipId === c.id) return { ...c, placedInZoneId: null };
+      if (c.id === existingChipId) return { ...c, placedInZoneId: null };
       return c;
     }));
     setSelectedChipId(null);
@@ -1291,6 +1383,85 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
   const total = dropZones.length;
   const allFilled = placed === total && total > 0;
 
+  // Render Image-based diagram
+  if (question.image) {
+    return (
+      <div>
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>DRAG LABELS TO THE CORRECT POSITIONS</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, background: '#F0F0F0', padding: '1rem', border: '2px solid #000' }}>
+            {(submitted && answer?.chipBank ? answer.chipBank : chipBank).map(chip => {
+              const isUsed = chip.placedInZoneId !== null;
+              const isSelected = chip.id === selectedChipId;
+              const style = { padding: '8px 14px', background: isUsed ? '#DDD' : isSelected ? '#000' : '#FFF', color: isUsed ? '#888' : isSelected ? '#FFF' : '#000', border: '2px solid #000', fontWeight: 900, fontSize: 12, cursor: isUsed || submitted ? 'default' : 'pointer', opacity: isUsed ? 0.5 : 1 };
+              return (
+                <div key={chip.id} style={style} draggable={!isUsed && !submitted && !isMobile} 
+                  onDragStart={(e) => !isMobile && handleChipDragStart(e, chip.id, 'bank')}
+                  onClick={() => isMobile && !isUsed && !submitted && handleChipTap(chip.id)}
+                >
+                  {chip.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', border: '4px solid #000', background: '#FFF' }}>
+          <img src={question.image} style={{ width: '100%', display: 'block' }} alt="Diagram" />
+          
+          {/* Drop Zones / Masks */}
+          {dropZones.map((zone, i) => {
+            const bbox = zone.bbox;
+            // Calculate position percentages. Bbox is from Tesseract (pixel coordinates)
+            // We assume the image is rendered full width.
+            const style = {
+              position: 'absolute',
+              left: `${(bbox.x0 / 10).toFixed(2)}%`, // This is a fallback if we don't have natural size
+              top: `${(bbox.y0 / 10).toFixed(2)}%`,
+              width: `${((bbox.x1 - bbox.x0) / 10).toFixed(2)}%`,
+              height: `${((bbox.y1 - bbox.y0) / 10).toFixed(2)}%`,
+            };
+            
+            // Re-calculate based on a 1000-unit coordinate system for simplicity
+            // or we can just use the raw bbox if we know the source resolution.
+            // Actually, Tesseract's bbox is relative to the input image size.
+            // Let's use a more robust way to scale them.
+            // For now, I'll use a trick: place them using style based on image natural size vs current size
+            
+            return <SmartDropZone 
+              key={zone.id} 
+              zone={zone} 
+              bbox={bbox}
+              submitted={submitted}
+              answer={answer}
+              zr={zoneResults.find(r => r.zoneId === zone.id)}
+              chipBank={submitted && answer?.chipBank ? answer.chipBank : chipBank}
+              isMobile={isMobile}
+              selectedChipId={selectedChipId}
+              dragState={dragState}
+              onDrop={handleDrop}
+              onTap={handleZoneTap}
+              onRemove={handleRemoveFromZone}
+            />;
+          })}
+        </div>
+
+        {!submitted && (
+          <div className="mt-8">
+            <button className="btn btn-primary w-full" disabled={!allFilled} onClick={submit} style={{ height: 56, fontSize: 16 }}>Check Answers ({placed}/{total} Placed)</button>
+          </div>
+        )}
+        
+        {submitted && !answer.skipped && (
+          <div className="fade-in-up mt-8">
+            <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={`${answer.score}/${answer.total}`} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback to original node-based diagram
   return (
     <div>
       <div className="diagram-layout">
@@ -1360,21 +1531,7 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
                     {content}
                     {filledChip && !submitted && <button style={{ position: 'absolute', top: -10, right: -10, width: 22, height: 22, borderRadius: 0, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); handleRemoveFromZone(activeZone.id); }}>✕</button>}
                     {submitted && zr && !zr.isCorrect && (
-                      <div style={{ 
-                        position: 'absolute', 
-                        top: 'calc(100% + 8px)', 
-                        left: '50%', 
-                        transform: 'translateX(-50%)',
-                        width: 'max-content',
-                        textAlign: 'center', 
-                        fontSize: 12, 
-                        color: '#000', 
-                        background: 'var(--correct-bg)',
-                        padding: '2px 8px',
-                        border: '1px solid var(--correct)',
-                        fontWeight: 700,
-                        zIndex: 20
-                      }}>
+                      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 'max-content', textAlign: 'center', fontSize: 12, color: '#000', background: 'var(--correct-bg)', padding: '2px 8px', border: '1px solid var(--correct)', fontWeight: 700, zIndex: 20 }}>
                         Ans: {zr.correctLabel}
                       </div>
                     )}
@@ -1422,6 +1579,84 @@ function DiagramQuestion({ question, submitted, answer, onAnswer, isMobile }) {
           <ExplanationBox question={question} isCorrect={answer.score === answer.total} isPartial={true} partialScore={`${answer.score}/${answer.total}`} />
         </div>
       )}
+    </div>
+  );
+}
+
+function SmartDropZone({ zone, bbox, submitted, answer, zr, chipBank, isMobile, selectedChipId, dragState, onDrop, onTap, onRemove }) {
+  const [parentSize, setParentSize] = useState({ w: 1, h: 1 });
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current && ref.current.parentElement) {
+      const img = ref.current.parentElement.querySelector('img');
+      if (img) {
+        const update = () => {
+          setParentSize({ w: img.clientWidth, h: img.clientHeight });
+        };
+        img.addEventListener('load', update);
+        window.addEventListener('resize', update);
+        update();
+        return () => {
+          img.removeEventListener('load', update);
+          window.removeEventListener('resize', update);
+        };
+      }
+    }
+  }, []);
+
+  const filledChip = chipBank.find(c => c.id === zone.placedChipId);
+  
+  // Tesseract bbox is relative to the original image size.
+  // We need to calculate percentages.
+  // But we don't know the original image size easily without loading it.
+  // A better way: Tesseract provides normalized coordinates or we can just use the img.naturalWidth/Height.
+  
+  const img = ref.current?.parentElement?.querySelector('img');
+  const nw = img?.naturalWidth || 1000;
+  const nh = img?.naturalHeight || 1000;
+
+  const style = {
+    position: 'absolute',
+    left: `${(bbox.x0 / nw * 100).toFixed(2)}%`,
+    top: `${(bbox.y0 / nh * 100).toFixed(2)}%`,
+    width: `${((bbox.x1 - bbox.x0) / nw * 100).toFixed(2)}%`,
+    height: `${((bbox.y1 - bbox.y0) / nh * 100).toFixed(2)}%`,
+    border: '1px solid #000',
+    background: '#FFF', // Masking the original text
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 'min(1.5vw, 12px)',
+    fontWeight: 900,
+    cursor: 'pointer',
+    transition: 'all 0.1s',
+    zIndex: 5,
+    overflow: 'hidden',
+    boxShadow: 'inset 0 0 4px rgba(0,0,0,0.1)'
+  };
+
+  if (dragState.overZoneId === zone.id || (isMobile && selectedChipId)) {
+    style.background = '#000'; style.color = '#FFF';
+  } else if (filledChip) {
+    style.background = '#000'; style.color = '#FFF';
+  }
+
+  if (submitted && zr) {
+    style.background = zr.isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)';
+    style.color = zr.isCorrect ? 'var(--correct)' : 'var(--wrong)';
+    style.borderColor = zr.isCorrect ? 'var(--correct)' : 'var(--wrong)';
+    style.zIndex = 10;
+  }
+
+  return (
+    <div ref={ref} style={style}
+      onDragOver={e => { e.preventDefault(); }}
+      onDrop={e => onDrop(e, zone.id)}
+      onClick={() => onTap(zone.id)}
+    >
+      {filledChip ? filledChip.label : (submitted ? 'Empty' : '')}
+      {filledChip && !submitted && <div style={{position:'absolute', top:0, right:0, background:'#F00', color:'#FFF', padding:'0 2px', fontSize:8}} onClick={(e)=>{e.stopPropagation(); onRemove(zone.id);}}>✕</div>}
     </div>
   );
 }
