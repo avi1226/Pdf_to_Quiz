@@ -675,6 +675,7 @@ export default function RawPrep() {
           uploadedFile={uploadedFile} setUploadedFile={setUploadedFile}
           pdfText={pdfText} setPdfText={setPdfText}
           pdfMeta={pdfMeta} setPdfMeta={setPdfMeta}
+          extractedDiagrams={extractedDiagrams} setExtractedDiagrams={setExtractedDiagrams}
           config={config} setConfig={setConfig}
           showError={showError}
           onGenerate={async () => {
@@ -768,7 +769,7 @@ export default function RawPrep() {
 // ═══════════════════════════════════════════════
 // UPLOAD SCREEN
 // ═══════════════════════════════════════════════
-function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, config, setConfig, showError, onGenerate }) {
+function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, uploadedFile, setUploadedFile, pdfText, setPdfText, pdfMeta, setPdfMeta, extractedDiagrams, setExtractedDiagrams, config, setConfig, showError, onGenerate }) {
   const fileInputRef = useRef(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -826,21 +827,21 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, up
           <h1 style={{ fontSize: 42, letterSpacing: '-0.04em', margin: 0, fontWeight: 900, textTransform: 'none' }}>RawPrep</h1>
         </div>
 
-        {!uploadedFile ? (
+        {(!uploadedFile || isExtracting) ? (
           <div className="mb-4">
             <div className="upload-zone"
-              style={{ border: `4px dashed #000`, padding: '4rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.1s ease' }}
-              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+              style={{ border: `4px dashed #000`, padding: '4rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: (isExtracting) ? 'default' : 'pointer', transition: 'all 0.1s ease' }}
+              onDragOver={(e) => { e.preventDefault(); if(!isExtracting) setIsDragOver(true); }}
               onDragLeave={() => setIsDragOver(false)}
-              onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
-              onClick={() => fileInputRef.current?.click()}
+              onDrop={(e) => { e.preventDefault(); setIsDragOver(false); if(!isExtracting) handleFileSelect(e.dataTransfer.files[0]); }}
+              onClick={() => !isExtracting && fileInputRef.current?.click()}
             >
               <input type="file" accept=".pdf,.pptx,.txt,.docx,.doc" ref={fileInputRef} hidden onChange={e => handleFileSelect(e.target.files[0])} />
               {isExtracting ? (
                 <div className="text-center">
                   <div style={{ width: 48, height: 48, border: '4px solid #000', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite', margin: '0 auto 1.5rem' }} />
                   <p style={{ fontWeight: 900, fontSize: 16 }}>{ocrActive ? 'HANDWRITING OCR ACTIVE...' : 'READING DOCUMENT...'}</p>
-                  <p style={{ fontSize: 12, marginTop: 8, opacity: 0.6 }}>{ocrActive ? 'THIS MAY TAKE A FEW MOMENTS' : 'PLEASE WAIT'}</p>
+                  <p style={{ fontSize: 12, marginTop: 8, opacity: 0.6 }}>THIS MAY TAKE A MOMENT</p>
                 </div>
               ) : (
                 <>
