@@ -127,6 +127,138 @@ const parseJSON = (raw) => {
   return JSON.parse(cleaned);
 };
 
+// ── OCR Text Quality Helpers ──
+const cleanOcrText = (rawText) => {
+  // Split into lines and clean each one
+  let lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  
+  let cleaned = lines.map(line => {
+    // Fix common OCR substitutions
+    let fixed = line
+      .replace(/[|l](?=[A-Z])/g, 'I')   // |T -> IT, lT -> IT
+      .replace(/0(?=[a-z])/g, 'o')       // 0f -> of
+      .replace(/1(?=[a-z]{2})/g, 'l')    // 1ike -> like
+      .replace(/\s+/g, ' ')             // collapse spaces
+      .replace(/[^\x20-\x7E]/g, '')     // remove non-printable chars
+      .replace(/\s*[>:;]+\s*/g, ' ')    // remove stray symbols like > : ;
+      .replace(/\s*[-=]+>\s*/g, ' ')    // remove arrows ->  =>
+      .replace(/\(\s*\)/g, '')          // remove empty parens
+      .replace(/\[\s*\]/g, '')          // remove empty brackets
+      .replace(/\s{2,}/g, ' ')          // collapse again
+      .trim();
+    return fixed;
+  }).filter(line => line.length > 0);
+  
+  // Filter out garbage lines
+  cleaned = cleaned.filter(line => {
+    const words = line.split(/\s+/);
+    if (words.length < 3) return false; // too short
+    
+    // Count how many words look like real English words (mostly letters, 2+ chars)
+    const realWords = words.filter(w => {
+      if (w.length < 2) return false;
+      const letterRatio = (w.match(/[a-zA-Z]/g) || []).length / w.length;
+      return letterRatio >= 0.7; // at least 70% letters
+    });
+    
+    // At least 60% of words should look like real words
+    const realRatio = realWords.length / words.length;
+    if (realRatio < 0.6) return false;
+    
+    // Check for excessive uppercase gibberish (like "OY N D> D;D")
+    const upperGibberish = (line.match(/\b[A-Z]{1,2}\b/g) || []).length;
+    if (upperGibberish > words.length * 0.5 && words.length > 4) return false;
+    
+    // Check for excessive special chars
+    const specialCharRatio = (line.match(/[^a-zA-Z0-9\s.,!?'"()-]/g) || []).length / line.length;
+    if (specialCharRatio > 0.2) return false;
+    
+    return true;
+  });
+  
+  return cleaned.join('. ').replace(/\.\s*\./g, '.').trim();
+};
+
+// Check if a sentence is readable enough for quiz generation
+const isSentenceReadable = (sentence) => {
+  const words = sentence.split(/\s+/);
+  if (words.length < 4) return false;
+  
+  // Count real-looking words (3+ chars, mostly alphabetic)
+  const goodWords = words.filter(w => {
+    if (w.length < 3) return false;
+    const letters = (w.match(/[a-zA-Z]/g) || []).length;
+    return letters / w.length >= 0.75;
+  });
+  
+  return goodWords.length >= words.length * 0.65;
+};
+
+const preprocessCanvasForOCR = (canvas) => {
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  
+  // Step 1: Convert to grayscale
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+    data[i] = data[i+1] = data[i+2] = gray;
+  }
+  
+  // Step 2: Adaptive thresholding (simplified Sauvola-like)
+  // For handwriting, we need local thresholding rather than global
+  const w = canvas.width;
+  const h = canvas.height;
+  const blockSize = 31; // neighborhood size
+  const C = 15; // constant subtracted from mean
+  
+  // Create integral image for fast mean computation
+  const gray = new Float32Array(w * h);
+  for (let i = 0; i < data.length; i += 4) {
+    gray[i / 4] = data[i];
+  }
+  
+  const integral = new Float64Array(w * h);
+  for (let y = 0; y < h; y++) {
+    let rowSum = 0;
+    for (let x = 0; x < w; x++) {
+      rowSum += gray[y * w + x];
+      integral[y * w + x] = rowSum + (y > 0 ? integral[(y-1) * w + x] : 0);
+    }
+  }
+  
+  // Apply adaptive threshold
+  const half = Math.floor(blockSize / 2);
+  const output = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const x1 = Math.max(0, x - half);
+      const y1 = Math.max(0, y - half);
+      const x2 = Math.min(w - 1, x + half);
+      const y2 = Math.min(h - 1, y + half);
+      
+      const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+      let sum = integral[y2 * w + x2];
+      if (x1 > 0) sum -= integral[y2 * w + (x1 - 1)];
+      if (y1 > 0) sum -= integral[(y1 - 1) * w + x2];
+      if (x1 > 0 && y1 > 0) sum += integral[(y1 - 1) * w + (x1 - 1)];
+      
+      const mean = sum / count;
+      const pixel = gray[y * w + x];
+      // Binarize: if pixel is darker than local mean - C, it's foreground (black)
+      output[y * w + x] = pixel < (mean - C) ? 0 : 255;
+    }
+  }
+  
+  // Write back to canvas
+  for (let i = 0; i < output.length; i++) {
+    const idx = i * 4;
+    data[idx] = data[idx+1] = data[idx+2] = output[i];
+    data[idx+3] = 255;
+  }
+  ctx.putImageData(imageData, 0, 0);
+};
+
 const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -150,33 +282,28 @@ const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
               ops.fnArray[j] === window.pdfjsLib.OPS.paintInlineImageXObject) {
             
             const objId = ops.argsArray[j][0];
-            const image = await page.commonObjs.get(objId) || await page.objs.get(objId);
+            let image = null;
+            try { image = await page.commonObjs.get(objId); } catch(e) {}
+            if (!image) { try { image = await page.objs.get(objId); } catch(e) {} }
             
-            if (image && image.width > 200 && image.height > 200) { // Only large images
+            if (image && image.width > 200 && image.height > 200) {
               const canvas = document.createElement('canvas');
               canvas.width = image.width;
               canvas.height = image.height;
               const ctx = canvas.getContext('2d');
               
               if (image.data) {
-                const imageData = ctx.createImageData(image.width, image.height);
+                const imgData = ctx.createImageData(image.width, image.height);
                 if (image.data.length === image.width * image.height * 3) {
-                  const data = imageData.data;
-                  for (let k = 0, l = 0; k < data.length; k += 4, l += 3) {
-                    data[k] = image.data[l];
-                    data[k+1] = image.data[l+1];
-                    data[k+2] = image.data[l+2];
-                    data[k+3] = 255;
+                  const d = imgData.data;
+                  for (let k = 0, l = 0; k < d.length; k += 4, l += 3) {
+                    d[k] = image.data[l]; d[k+1] = image.data[l+1]; d[k+2] = image.data[l+2]; d[k+3] = 255;
                   }
                 } else {
-                  imageData.data.set(image.data);
+                  imgData.data.set(image.data);
                 }
-                ctx.putImageData(imageData, 0, 0);
-                extractedDiagrams.push({
-                  id: `diag-${i}-${j}`,
-                  src: canvas.toDataURL('image/png'),
-                  page: i
-                });
+                ctx.putImageData(imgData, 0, 0);
+                extractedDiagrams.push({ id: `diag-${i}-${j}`, src: canvas.toDataURL('image/png'), page: i });
                 if (onDiagramFound) onDiagramFound();
               }
             }
@@ -188,40 +315,75 @@ const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
     }
 
     const avgCharsPerPage = fullText.trim().length / pdf.numPages;
-    if (avgCharsPerPage < 40 && window.Tesseract) {
+    console.log(`Avg chars/page: ${avgCharsPerPage.toFixed(0)}`);
+
+    if (avgCharsPerPage < 50 && window.Tesseract) {
+      console.log("Scanned/handwritten PDF detected. Starting enhanced OCR...");
       if (onOcrStart) onOcrStart();
       fullText = '';
-      const worker = await window.Tesseract.createWorker('eng', 1);
+      
+      const worker = await window.Tesseract.createWorker('eng', 1, {
+        logger: m => { if (m.status === 'recognizing text') console.log(`OCR Page progress: ${(m.progress * 100).toFixed(0)}%`); }
+      });
+      
+      // Configure Tesseract for better handwriting recognition
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6',     // Assume uniform block of text
+        preserve_interword_spaces: '1', // Keep spacing
+      });
+      
       const pagesToProcess = Math.min(pdf.numPages, 15);
+      const allPageTexts = [];
+      
       for (let i = 1; i <= pagesToProcess; i++) {
+        console.log(`OCR processing page ${i}/${pagesToProcess}...`);
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 3.5 });
+        
+        // Use scale 2.5 — sweet spot between detail and noise
+        const viewport = page.getViewport({ scale: 2.5 });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
         await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        for (let j = 0; j < data.length; j += 4) {
-          const brightness = (data[j] + data[j + 1] + data[j + 2]) / 3;
-          const newVal = (brightness - 128) * 1.5 + 128;
-          const final = newVal < 0 ? 0 : newVal > 255 ? 255 : newVal;
-          data[j] = data[j + 1] = data[j + 2] = final;
+        
+        // Apply adaptive thresholding for handwriting
+        preprocessCanvasForOCR(canvas);
+        
+        const { data: { text, confidence } } = await worker.recognize(canvas);
+        console.log(`Page ${i} OCR confidence: ${confidence}%`);
+        
+        // If confidence is very low, try again without preprocessing (raw render)
+        if (confidence < 40) {
+          console.log(`Low confidence on page ${i}, retrying with raw image...`);
+          const canvas2 = document.createElement('canvas');
+          const ctx2 = canvas2.getContext('2d');
+          canvas2.width = viewport.width;
+          canvas2.height = viewport.height;
+          await page.render({ canvasContext: ctx2, viewport: viewport }).promise;
+          
+          const { data: { text: text2, confidence: conf2 } } = await worker.recognize(canvas2);
+          console.log(`Page ${i} raw retry confidence: ${conf2}%`);
+          allPageTexts.push(conf2 > confidence ? text2 : text);
+        } else {
+          allPageTexts.push(text);
         }
-        context.putImageData(imageData, 0, 0);
-        const { data: { text } } = await worker.recognize(canvas);
-        fullText += text + '\n';
       }
+      
       await worker.terminate();
+      
+      // Clean and join all OCR results
+      fullText = allPageTexts.join('\n');
     }
 
-    const cleanText = fullText.trim();
+    // Apply OCR text cleaning 
+    const cleanText = cleanOcrText(fullText);
+    console.log(`Final cleaned text (${cleanText.length} chars): ${cleanText.substring(0, 200)}...`);
+    
     return {
       text: cleanText.slice(0, 60000),
       pageCount: pdf.numPages,
-      wordCount: cleanText.split(/\s+/).length,
+      wordCount: cleanText.split(/\s+/).filter(w => w.length > 0).length,
       diagrams: extractedDiagrams
     };
   } catch (err) {
@@ -411,16 +573,36 @@ Return JSON:
 const generateLocalQuestions = (text, count, types = ['mcq', 'fill_blank'], diagrams = []) => {
   const cleanedText = text.replace(/\n+/g, ' ').replace(/\s\s+/g, ' ').trim();
   const sentences = cleanedText.match(/[^.!?]+[.!?]+/g) || [];
-  const filtered = sentences.map(s => s.trim()).filter(s => s.split(' ').length > 8 && s.length < 300);
+  
+  // Filter sentences: must be long enough AND readable (no OCR garbage)
+  const filtered = sentences
+    .map(s => s.trim())
+    .filter(s => s.split(' ').length > 6 && s.length < 300)
+    .filter(s => isSentenceReadable(s));
   
   let sources = filtered;
   if (sources.length < count) {
-    sources = cleanedText.split(/[.!?\n]/).map(s => s.trim()).filter(s => s.length > 20);
+    // Try splitting by line breaks too, but still filter for readability
+    const lineSources = cleanedText.split(/[.!?\n]/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20)
+      .filter(s => isSentenceReadable(s));
+    sources = [...new Set([...sources, ...lineSources])];
+  }
+
+  if (sources.length === 0) {
+    // Last resort: use whatever we have, but at least filter short lines
+    sources = cleanedText.split(/[.!?\n]/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15 && s.split(' ').length > 3);
   }
 
   const shuffled = shuffle(sources).slice(0, count);
   const allWords = cleanedText.replace(/[.!?(),;:"']/g, '').split(/\s+/);
-  const keyTerms = [...new Set(allWords.filter(w => w.length > 6))];
+  // Only keep key terms that look like real words (alphabetic, 4+ chars)
+  const keyTerms = [...new Set(allWords.filter(w => 
+    w.length > 5 && /^[a-zA-Z]+$/.test(w)
+  ))];
   
   let diagramIndex = 0;
 
@@ -795,8 +977,8 @@ function UploadScreen({ pdfjsReady, jszipReady, mammothReady, tesseractReady, up
       else if (ext === 'docx' || ext === 'doc') result = await extractDocxText(file);
       else result = await extractTxtText(file);
       
-      if (!result.text || result.text.trim().length < 50) {
-        showError('no_text', 'Could not extract enough text from this file. It might be scanned or protected.');
+      if (!result.text || result.text.trim().length < 30) {
+        showError('no_text', 'Could not extract readable text from this file. If it is handwritten, the writing may be too unclear for OCR. Try a clearer scan.');
         setUploadedFile(null);
         return;
       }
