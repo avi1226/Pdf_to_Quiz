@@ -127,56 +127,179 @@ const parseJSON = (raw) => {
   return JSON.parse(cleaned);
 };
 
-// ── Dictionary for OCR Spell Correction ──
-const DICT_WORDS = new Set(("the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us is are was were been has had did does doing would should could may might shall must need dare ought used able the and that have with this will from they been have some what about which when make like time just know take year good come over after give most also back look think well find here thing many some still between both under each last long great little own just old right big high different small large next early young important few public bad same able").split(" "));
-// Academic & CS terms
-"function variable constant method class object array string integer boolean return value parameter argument type data structure algorithm program code system process memory input output define declaration expression statement operator operand condition loop iteration recursion pointer reference address stack queue tree graph node edge binary search sort merge insert delete update create read write file error exception handle thread network protocol database table query index key primary foreign relation schema model view controller interface abstract inherit polymorphism encapsulation module package library framework compile interpret execute runtime syntax semantic logic digital analog signal circuit register processor instruction architecture component design pattern factory singleton observer strategy command state machine automaton grammar language compiler parser lexer token symbol scope binding closure prototype constructor destructor allocation garbage collection concurrent parallel distributed synchronous asynchronous callback promise async await event handler listener trigger middleware routing endpoint request response header body status authentication authorization encryption hash certificate socket stream buffer cache proxy server client host port domain path resource service microservice container virtual deploy infrastructure cloud storage compute bandwidth latency throughput availability scalability reliability performance testing debug monitor logging trace profile benchmark".split(" ").forEach(w => DICT_WORDS.add(w));
-// Common academic words
-"analysis theory concept principle application methodology research experiment hypothesis conclusion evidence evaluation comparison definition explanation description classification category characteristic property feature aspect element factor component function role purpose effect result consequence impact influence significance importance relevant essential critical fundamental basic primary secondary specific general particular individual overall comprehensive detailed accurate precise consistent reliable valid appropriate suitable effective efficient sufficient necessary required optional available current previous following additional further alternative potential possible probable likely certain various several multiple numerous frequent common typical standard normal regular traditional conventional modern contemporary advanced intermediate introduction overview summary review discussion argument perspective approach technique procedure practice example illustration demonstration representation interpretation understanding knowledge information communication technology science mathematics engineering physics chemistry biology psychology sociology economics history philosophy education environment society culture".split(" ").forEach(w => DICT_WORDS.add(w));
+// ── Enhanced OCR Spell Correction Engine ──
 
-const levenshtein = (a, b) => {
+// Common OCR character confusions (what OCR misreads → what it should be)
+const OCR_CONFUSIONS = {
+  'rn': 'm', 'cl': 'd', 'cl': 'd', 'li': 'h', 'ln': 'in', 'vv': 'w',
+  'nn': 'm', 'ii': 'u', 'tl': 'ti', 'fl': 'fi', 'rl': 'n', 'lI': 'h',
+  'oO': 'o', 'Oo': 'o', 'l1': 'll', '1l': 'll', 'I1': 'Il',
+};
+
+// Build comprehensive dictionary
+const DICT_WORDS = new Set();
+// Top English words
+"the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us is are was were been has had did does doing would should could may might shall must need used able same own few end found part much each every such between should however another still since during both long those before after through while where again never world life always point here three place order without does last while before since great very still really after under right between left small because those most only state same being number through school never world where going through point things might every could place long before since where find while might place after still could about under between again right number other state there small before large never going just every where still things while those right about again could after place being state here through might number world find long still every things never".split(" ").forEach(w => DICT_WORDS.add(w));
+// Academic vocabulary
+"analysis theory concept principle application methodology research experiment hypothesis conclusion evidence evaluation comparison definition explanation description classification category characteristic property feature aspect element factor component role purpose effect result consequence impact influence significance importance relevant essential critical fundamental basic primary secondary specific general particular individual overall comprehensive detailed accurate precise consistent reliable valid appropriate suitable effective efficient sufficient necessary required optional available current previous following additional further alternative potential possible probable likely certain various several multiple numerous frequent common typical standard normal regular traditional conventional modern contemporary advanced intermediate introduction overview summary review discussion argument perspective approach technique procedure practice example illustration demonstration representation interpretation understanding knowledge information communication technology science mathematics engineering physics chemistry biology psychology sociology economics history philosophy education environment society culture".split(" ").forEach(w => DICT_WORDS.add(w));
+// CS & Programming terms
+"function variable constant method class object array string integer boolean return value parameter argument type data structure algorithm program code system process memory input output define declaration expression statement operator operand condition loop iteration recursion pointer reference address stack queue tree graph node edge binary search sort merge insert delete update create read write file error exception handle thread network protocol database table query index key primary foreign relation schema model view controller interface abstract inherit polymorphism encapsulation module package library framework compile interpret execute runtime syntax semantic logic digital analog signal circuit register processor instruction architecture component design pattern notation global local scope binding closure prototype constructor destructor allocation garbage collection concurrent parallel distributed synchronous asynchronous callback promise event handler listener trigger middleware routing endpoint request response header body status authentication authorization encryption hash certificate socket stream buffer cache proxy server client host port domain path resource service container virtual deploy infrastructure cloud storage compute bandwidth latency throughput availability scalability reliability performance testing debug monitor logging trace profile benchmark tuple dictionary list linked heap priority sorted unsorted balanced traversal depth breadth complexity constant linear logarithmic quadratic exponential polynomial factorial optimal worst average case amortized recursive iterative dynamic programming greedy divide conquer backtracking heuristic approximation simulation random deterministic".split(" ").forEach(w => DICT_WORDS.add(w));
+// More general English
+"about above according across actually after again against already also although always among another answer any appear around away back become before began begin behind being believe below beside between beyond both bring build call came change children city close come consider could country course day develop different each early end enough even example experience eye face fact family far feel find first follow form found general give great group hand happen head help here high hold home house idea important include increase interest keep kind know large last late lead learn leave let level life light line little live long look lose make man many matter may mean might mind money move much must name need never next night number offer often old only open order other own part people person place plan play point possible power present problem provide public question quite rather read real really receive report result right room run same say school seem service set several show side since small some something sometimes stand start state still story student study system take talk tell than that their them then there these thing think those though thought three through time together too turn under understand until upon very want water way well what when where whether which while who whole why without word work world would write year young".split(" ").forEach(w => DICT_WORDS.add(w));
+// Technical/document words  
+"chapter section paragraph page figure table diagram chart equation formula theorem proof lemma corollary definition axiom postulate proposition conjecture graph matrix vector scalar tensor function relation mapping domain range codomain bijection injection surjection isomorphism homomorphism endomorphism automorphism kernel image quotient subgroup normal cyclic abelian commutative associative distributive identity inverse element set subset superset union intersection complement difference symmetric power partition equivalence congruence modular arithmetic integer rational real complex natural prime composite factorial permutation combination probability distribution variance deviation correlation regression interpolation extrapolation approximation convergence divergence limit continuity derivative integral differential gradient divergence curl laplacian fourier transform convolution impulse response transfer function stability feedback control signal noise filter amplitude frequency phase wavelength period harmonic oscillation damping resonance impedance conductance resistance capacitance inductance voltage current power energy work force mass acceleration velocity displacement momentum torque pressure temperature entropy enthalpy gibbs helmholtz".split(" ").forEach(w => DICT_WORDS.add(w));
+
+// Weighted Levenshtein that accounts for OCR-specific confusions
+const ocrLevenshtein = (a, b) => {
   const m = a.length, n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
   const d = Array.from({length: m + 1}, (_, i) => {
-    const row = new Array(n + 1);
+    const row = new Float32Array(n + 1);
     row[0] = i;
     return row;
   });
   for (let j = 1; j <= n; j++) d[0][j] = j;
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      const cost = a[i-1].toLowerCase() === b[j-1].toLowerCase() ? 0 : 1;
-      d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + cost);
+      if (a[i-1].toLowerCase() === b[j-1].toLowerCase()) {
+        d[i][j] = d[i-1][j-1];
+      } else {
+        // Check for OCR-specific confusion (lower cost for common misreads)
+        let subCost = 1;
+        const ac = a[i-1].toLowerCase(), bc = b[j-1].toLowerCase();
+        // Common visual confusions get lower penalty
+        const visualPairs = 'o0 O0 l1 lI 1l I1 il li rn nn cl vv ii 5s S5 8B B8 6b 9g gq qg';
+        if (visualPairs.includes(ac+bc) || visualPairs.includes(bc+ac)) subCost = 0.3;
+        // Similar-looking letters
+        else if ('oe ae io ou ei'.includes(ac+bc) || 'oe ae io ou ei'.includes(bc+ac)) subCost = 0.6;
+        
+        d[i][j] = Math.min(
+          d[i-1][j] + 1,         // deletion
+          d[i][j-1] + 1,         // insertion
+          d[i-1][j-1] + subCost  // substitution
+        );
+        
+        // Transposition (swap adjacent chars) — very common in OCR
+        if (i > 1 && j > 1 && a[i-1].toLowerCase() === b[j-2].toLowerCase() && a[i-2].toLowerCase() === b[j-1].toLowerCase()) {
+          d[i][j] = Math.min(d[i][j], d[i-2][j-2] + 0.5);
+        }
+      }
     }
   }
   return d[m][n];
 };
 
+// Apply common OCR multi-char confusion fixes before spell check
+const fixOcrPatterns = (text) => {
+  return text
+    .replace(/\brn(?=[aeiou])/g, 'm')     // rning → ming (morning)
+    .replace(/(?<=[a-z])rn(?=[a-z])/g, 'm') // rnore → more
+    .replace(/\bcl(?=[aeiou])/g, 'd')     // clata → data
+    .replace(/\bvv(?=[aeiou])/g, 'w')     // vvith → with
+    .replace(/(?<=\w)tbe\b/g, 'the')      // common misread
+    .replace(/\btbe\b/gi, 'the')
+    .replace(/\bwbich\b/gi, 'which')
+    .replace(/\btbat\b/gi, 'that')
+    .replace(/\bwitb\b/gi, 'with')
+    .replace(/\bfrorn\b/gi, 'from')
+    .replace(/\bsarne\b/gi, 'same')
+    .replace(/\bnarne\b/gi, 'name')
+    .replace(/\btirne\b/gi, 'time')
+    .replace(/\bcornputer\b/gi, 'computer')
+    .replace(/\bprograrnm?e?\b/gi, 'program')
+    .replace(/\bnurnber\b/gi, 'number')
+    .replace(/\bmernory\b/gi, 'memory')
+    .replace(/\bsystern\b/gi, 'system');
+};
+
 const correctOcrWord = (word, dictionary, maxDist) => {
   if (word.length < 3) return word;
   const lower = word.toLowerCase();
-  if (dictionary.has(lower)) return word; // already correct
+  if (dictionary.has(lower)) return word;
   
   let bestMatch = null, bestDist = maxDist + 1;
   for (const dictWord of dictionary) {
+    // Quick length filter
     if (Math.abs(dictWord.length - lower.length) > maxDist) continue;
-    const dist = levenshtein(lower, dictWord);
+    // Quick first-char filter (OCR rarely gets the first letter completely wrong)
+    if (lower.length > 4 && dictWord.length > 4) {
+      const fc = lower[0], dc = dictWord[0];
+      // Allow only visually similar first chars
+      if (fc !== dc && !('o0O il1I lI1 Il1 cCo sS5 bB8 gG9'.includes(fc+dc) || 'o0O il1I lI1 Il1 cCo sS5 bB8 gG9'.includes(dc+fc))) {
+        if (lower[0] !== dictWord[0] && lower[1] !== dictWord[1]) continue;
+      }
+    }
+    const dist = ocrLevenshtein(lower, dictWord);
     if (dist < bestDist) { bestDist = dist; bestMatch = dictWord; }
-    if (dist === 1) break; // close enough
+    if (dist <= 0.5) break; // near-perfect match
   }
   
   if (bestMatch && bestDist <= maxDist) {
-    // Preserve original capitalization pattern
-    if (word[0] === word[0].toUpperCase()) {
-      return bestMatch.charAt(0).toUpperCase() + bestMatch.slice(1);
-    }
+    if (word === word.toUpperCase()) return bestMatch.toUpperCase();
+    if (word[0] === word[0].toUpperCase()) return bestMatch.charAt(0).toUpperCase() + bestMatch.slice(1);
     return bestMatch;
   }
   return word;
 };
 
+// Bigram context: common word pairs help resolve ambiguity
+const COMMON_BIGRAMS = new Map([
+  ['data','structure'],['data','type'],['data','base'],['binary','tree'],['binary','search'],
+  ['linked','list'],['hash','table'],['hash','map'],['source','code'],['machine','learning'],
+  ['operating','system'],['file','system'],['control','flow'],['for','loop'],['while','loop'],
+  ['if','else'],['return','value'],['function','call'],['base','case'],['time','complexity'],
+  ['space','complexity'],['big','notation'],['object','oriented'],['dynamic','programming'],
+  ['divide','conquer'],['depth','first'],['breadth','first'],['main','memory'],['virtual','memory'],
+  ['page','table'],['stack','pointer'],['program','counter'],['instruction','set'],
+  ['assembly','language'],['high','level'],['low','level'],['real','time'],['run','time'],
+]);
+
+const correctWithContext = (words, dictionary) => {
+  const result = [...words];
+  for (let i = 0; i < result.length; i++) {
+    const w = result[i].toLowerCase().replace(/[^a-z]/g, '');
+    if (w.length < 3) continue;
+    
+    // Check if previous word + current word should form a known bigram
+    if (i > 0) {
+      const prev = result[i-1].toLowerCase().replace(/[^a-z]/g, '');
+      const expectedNext = COMMON_BIGRAMS.get(prev);
+      if (expectedNext && !dictionary.has(w)) {
+        const dist = ocrLevenshtein(w, expectedNext);
+        if (dist <= 2) {
+          const orig = result[i];
+          result[i] = orig[0] === orig[0].toUpperCase() 
+            ? expectedNext.charAt(0).toUpperCase() + expectedNext.slice(1) 
+            : expectedNext;
+          console.log(`  Context fix: "${prev} ${orig}" → "${prev} ${result[i]}"`);
+        }
+      }
+    }
+    // Check if current word + next word should form a known bigram  
+    if (i < result.length - 1) {
+      const next = result[i+1].toLowerCase().replace(/[^a-z]/g, '');
+      for (const [key, val] of COMMON_BIGRAMS) {
+        if (val === next && !dictionary.has(w)) {
+          const dist = ocrLevenshtein(w, key);
+          if (dist <= 2) {
+            const orig = result[i];
+            result[i] = orig[0] === orig[0].toUpperCase()
+              ? key.charAt(0).toUpperCase() + key.slice(1) : key;
+            console.log(`  Context fix: "${orig} ${next}" → "${result[i]} ${next}"`);
+            break;
+          }
+        }
+      }
+    }
+  }
+  return result;
+};
+
 const correctOcrText = (text) => {
+  // Pass 1: Fix known OCR multi-char patterns
+  text = fixOcrPatterns(text);
+  
   // Build document dictionary from frequently appearing words
   const wordFreq = {};
   text.split(/\s+/).forEach(w => {
@@ -184,23 +307,30 @@ const correctOcrText = (text) => {
     if (clean.length >= 3) wordFreq[clean] = (wordFreq[clean] || 0) + 1;
   });
   
-  // Words appearing 2+ times are likely correct
   const docDict = new Set(DICT_WORDS);
   Object.entries(wordFreq).forEach(([w, count]) => {
     if (count >= 2) docDict.add(w);
   });
   
-  console.log(`Spell correction: ${docDict.size} dictionary words, ${Object.keys(wordFreq).length} unique OCR words`);
+  console.log(`Spell correction: ${docDict.size} dict words, ${Object.keys(wordFreq).length} unique OCR words`);
   
+  // Pass 2: Individual word correction with OCR-aware distance
   let corrected = 0;
-  const result = text.replace(/\b[a-zA-Z]{3,}\b/g, (match) => {
-    const maxDist = match.length <= 4 ? 1 : match.length <= 7 ? 2 : 3;
+  let result = text.replace(/\b[a-zA-Z]{3,}\b/g, (match) => {
+    const maxDist = match.length <= 4 ? 1 : match.length <= 6 ? 1.5 : match.length <= 9 ? 2.5 : 3;
     const fixed = correctOcrWord(match, docDict, maxDist);
-    if (fixed !== match) { corrected++; console.log(`  OCR fix: "${match}" → "${fixed}"`); }
+    if (fixed !== match) { corrected++; console.log(`  Fix: "${match}" → "${fixed}"`); }
     return fixed;
   });
   
-  console.log(`Spell correction: fixed ${corrected} words`);
+  // Pass 3: Context-aware bigram correction
+  const words = result.split(/(\s+)/); // preserve whitespace
+  const onlyWords = words.filter(w => /[a-zA-Z]/.test(w));
+  const contextFixed = correctWithContext(onlyWords, docDict);
+  let wi = 0;
+  result = words.map(w => /[a-zA-Z]/.test(w) ? contextFixed[wi++] : w).join('');
+  
+  console.log(`Spell correction: fixed ${corrected} words total`);
   return result;
 };
 
@@ -232,7 +362,6 @@ const cleanOcrText = (rawText) => {
     return true;
   });
   
-  // Join, then apply spell correction
   let text = cleaned.join('. ').replace(/\.\s*\./g, '.').trim();
   text = correctOcrText(text);
   return text;
@@ -246,69 +375,80 @@ const isSentenceReadable = (sentence) => {
 };
 
 
-const preprocessCanvasForOCR = (canvas) => {
-  const ctx = canvas.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-  
-  // Step 1: Convert to grayscale
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-    data[i] = data[i+1] = data[i+2] = gray;
-  }
-  
-  // Step 2: Adaptive thresholding (simplified Sauvola-like)
-  // For handwriting, we need local thresholding rather than global
-  const w = canvas.width;
-  const h = canvas.height;
-  const blockSize = 31; // neighborhood size
-  const C = 15; // constant subtracted from mean
-  
-  // Create integral image for fast mean computation
-  const gray = new Float32Array(w * h);
-  for (let i = 0; i < data.length; i += 4) {
-    gray[i / 4] = data[i];
-  }
-  
-  const integral = new Float64Array(w * h);
-  for (let y = 0; y < h; y++) {
-    let rowSum = 0;
-    for (let x = 0; x < w; x++) {
-      rowSum += gray[y * w + x];
-      integral[y * w + x] = rowSum + (y > 0 ? integral[(y-1) * w + x] : 0);
+
+// Preprocessing strategies for OCR - try multiple and pick best
+const ocrPreprocess = {
+  // Strategy 1: Light cleanup - just grayscale + mild contrast
+  grayscale: (canvas) => {
+    const out = document.createElement('canvas');
+    out.width = canvas.width; out.height = canvas.height;
+    const ctx = out.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+    const img = ctx.getImageData(0, 0, out.width, out.height);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+      // Mild contrast boost
+      const v = Math.max(0, Math.min(255, (g - 128) * 1.3 + 128));
+      d[i] = d[i+1] = d[i+2] = v;
     }
-  }
-  
-  // Apply adaptive threshold
-  const half = Math.floor(blockSize / 2);
-  const output = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const x1 = Math.max(0, x - half);
-      const y1 = Math.max(0, y - half);
-      const x2 = Math.min(w - 1, x + half);
-      const y2 = Math.min(h - 1, y + half);
-      
-      const count = (x2 - x1 + 1) * (y2 - y1 + 1);
-      let sum = integral[y2 * w + x2];
-      if (x1 > 0) sum -= integral[y2 * w + (x1 - 1)];
-      if (y1 > 0) sum -= integral[(y1 - 1) * w + x2];
-      if (x1 > 0 && y1 > 0) sum += integral[(y1 - 1) * w + (x1 - 1)];
-      
-      const mean = sum / count;
-      const pixel = gray[y * w + x];
-      // Binarize: if pixel is darker than local mean - C, it's foreground (black)
-      output[y * w + x] = pixel < (mean - C) ? 0 : 255;
+    ctx.putImageData(img, 0, 0);
+    return out;
+  },
+  // Strategy 2: Strong contrast (good for faint handwriting)
+  highContrast: (canvas) => {
+    const out = document.createElement('canvas');
+    out.width = canvas.width; out.height = canvas.height;
+    const ctx = out.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+    const img = ctx.getImageData(0, 0, out.width, out.height);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+      const v = Math.max(0, Math.min(255, (g - 128) * 2.0 + 128));
+      d[i] = d[i+1] = d[i+2] = v;
     }
+    ctx.putImageData(img, 0, 0);
+    return out;
+  },
+  // Strategy 3: Adaptive threshold (good for printed text on noisy backgrounds)
+  adaptive: (canvas) => {
+    const out = document.createElement('canvas');
+    out.width = canvas.width; out.height = canvas.height;
+    const ctx = out.getContext('2d');
+    ctx.drawImage(canvas, 0, 0);
+    const img = ctx.getImageData(0, 0, out.width, out.height);
+    const d = img.data;
+    const w = out.width, h = out.height;
+    const gray = new Float32Array(w * h);
+    for (let i = 0; i < d.length; i += 4) {
+      gray[i/4] = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+    }
+    const integral = new Float64Array(w * h);
+    for (let y = 0; y < h; y++) {
+      let rs = 0;
+      for (let x = 0; x < w; x++) {
+        rs += gray[y*w+x];
+        integral[y*w+x] = rs + (y > 0 ? integral[(y-1)*w+x] : 0);
+      }
+    }
+    const bk = 25, half = 12, C = 12;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const x1=Math.max(0,x-half), y1=Math.max(0,y-half), x2=Math.min(w-1,x+half), y2=Math.min(h-1,y+half);
+        const cnt=(x2-x1+1)*(y2-y1+1);
+        let s=integral[y2*w+x2];
+        if(x1>0) s-=integral[y2*w+(x1-1)];
+        if(y1>0) s-=integral[(y1-1)*w+x2];
+        if(x1>0&&y1>0) s+=integral[(y1-1)*w+(x1-1)];
+        const v = gray[y*w+x] < (s/cnt - C) ? 0 : 255;
+        const idx = (y*w+x)*4;
+        d[idx]=d[idx+1]=d[idx+2]=v; d[idx+3]=255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return out;
   }
-  
-  // Write back to canvas
-  for (let i = 0; i < output.length; i++) {
-    const idx = i * 4;
-    data[idx] = data[idx+1] = data[idx+2] = output[i];
-    data[idx+3] = 255;
-  }
-  ctx.putImageData(imageData, 0, 0);
 };
 
 const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
@@ -370,67 +510,70 @@ const extractPdfText = async (file, onOcrStart, onDiagramFound) => {
     console.log(`Avg chars/page: ${avgCharsPerPage.toFixed(0)}`);
 
     if (avgCharsPerPage < 50 && window.Tesseract) {
-      console.log("Scanned/handwritten PDF detected. Starting enhanced OCR...");
+      console.log("Scanned/handwritten PDF detected. Starting multi-strategy OCR...");
       if (onOcrStart) onOcrStart();
       fullText = '';
       
       const worker = await window.Tesseract.createWorker('eng', 1, {
-        logger: m => { if (m.status === 'recognizing text') console.log(`OCR Page progress: ${(m.progress * 100).toFixed(0)}%`); }
+        logger: m => { if (m.status === 'recognizing text') console.log(`OCR progress: ${(m.progress * 100).toFixed(0)}%`); }
       });
       
-      // Configure Tesseract for better handwriting recognition
+      // Use PSM 3 (auto) — let Tesseract decide the best segmentation
       await worker.setParameters({
-        tessedit_pageseg_mode: '6',     // Assume uniform block of text
-        preserve_interword_spaces: '1', // Keep spacing
+        tessedit_pageseg_mode: '3',
+        preserve_interword_spaces: '1',
       });
       
       const pagesToProcess = Math.min(pdf.numPages, 15);
       const allPageTexts = [];
       
       for (let i = 1; i <= pagesToProcess; i++) {
-        console.log(`OCR processing page ${i}/${pagesToProcess}...`);
+        console.log(`\n── OCR Page ${i}/${pagesToProcess} ──`);
         const page = await pdf.getPage(i);
         
-        // Use scale 2.5 — sweet spot between detail and noise
-        const viewport = page.getViewport({ scale: 2.5 });
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        // Render at scale 2.0 (lower = less noise for handwriting)
+        const viewport = page.getViewport({ scale: 2.0 });
+        const baseCanvas = document.createElement('canvas');
+        const baseCtx = baseCanvas.getContext('2d');
+        baseCanvas.width = viewport.width;
+        baseCanvas.height = viewport.height;
+        await page.render({ canvasContext: baseCtx, viewport }).promise;
         
-        // Apply adaptive thresholding for handwriting
-        preprocessCanvasForOCR(canvas);
+        // Try all 3 strategies, pick the one with highest confidence
+        const strategies = ['grayscale', 'highContrast', 'adaptive'];
+        let bestText = '', bestConf = 0, bestStrategy = '';
         
-        const { data: { text, confidence } } = await worker.recognize(canvas);
-        console.log(`Page ${i} OCR confidence: ${confidence}%`);
-        
-        // If confidence is very low, try again without preprocessing (raw render)
-        if (confidence < 40) {
-          console.log(`Low confidence on page ${i}, retrying with raw image...`);
-          const canvas2 = document.createElement('canvas');
-          const ctx2 = canvas2.getContext('2d');
-          canvas2.width = viewport.width;
-          canvas2.height = viewport.height;
-          await page.render({ canvasContext: ctx2, viewport: viewport }).promise;
-          
-          const { data: { text: text2, confidence: conf2 } } = await worker.recognize(canvas2);
-          console.log(`Page ${i} raw retry confidence: ${conf2}%`);
-          allPageTexts.push(conf2 > confidence ? text2 : text);
-        } else {
-          allPageTexts.push(text);
+        for (const strat of strategies) {
+          const processed = ocrPreprocess[strat](baseCanvas);
+          const { data: { text, confidence } } = await worker.recognize(processed);
+          console.log(`  ${strat}: confidence=${confidence.toFixed(1)}%, words=${text.split(/\s+/).length}`);
+          if (confidence > bestConf) {
+            bestConf = confidence;
+            bestText = text;
+            bestStrategy = strat;
+          }
         }
+        
+        // Also try raw (unprocessed) image
+        const { data: { text: rawText, confidence: rawConf } } = await worker.recognize(baseCanvas);
+        console.log(`  raw: confidence=${rawConf.toFixed(1)}%, words=${rawText.split(/\s+/).length}`);
+        if (rawConf > bestConf) {
+          bestConf = rawConf;
+          bestText = rawText;
+          bestStrategy = 'raw';
+        }
+        
+        console.log(`  ✓ Winner: ${bestStrategy} (${bestConf.toFixed(1)}%)`);
+        allPageTexts.push(bestText);
       }
       
       await worker.terminate();
-      
-      // Clean and join all OCR results
       fullText = allPageTexts.join('\n');
     }
 
-    // Apply OCR text cleaning 
+    // Apply OCR text cleaning + spell correction
     const cleanText = cleanOcrText(fullText);
-    console.log(`Final cleaned text (${cleanText.length} chars): ${cleanText.substring(0, 200)}...`);
+    console.log(`Final cleaned text (${cleanText.length} chars): ${cleanText.substring(0, 300)}...`);
     
     return {
       text: cleanText.slice(0, 60000),
