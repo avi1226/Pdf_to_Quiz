@@ -1,63 +1,100 @@
-# RawPrep — Brutalist PDF/PPTX Quizzer
+# RawPrep
 
-**RawPrep** is a high-performance, 100% local-first web application designed for students and professionals to transform their study materials into interactive quizzes. Built with a bold **Brutalist** aesthetic, RawPrep prioritizes privacy, speed, and focus.
-
----
-
-## ⚡ Key Features
-
-- **100% Offline Processing**: All document parsing and quiz generation happens directly in your browser. No data is ever sent to a server.
-- **Multi-Format Support**: Upload `.pdf` or `.pptx` (PowerPoint) files and start studying instantly.
-- **Smart Question Generator**:
-  - **Multiple Choice (MCQ)**: Context-aware questions with plausible decoys.
-  - **True/False**: Verifies factual accuracy of document statements.
-  - **Fill-in-the-Blank**: Tests vocabulary and key concept recall.
-  - **Short Answer**: Deep comprehension checks with model-answer comparisons.
-  - **Diagrams**: Interactive flowchart and sequence reordering.
-- **Brutalist Design System**: A high-contrast, black-and-white UI designed for maximum focus and zero distractions.
-- **Advanced Performance Analytics**:
-  - **Session Summary**: Instant scoring and time tracking.
-  - **Topic Heatmaps**: Visualize which areas of the document you need to review.
-  - **AI Study Plan**: Actionable recommendations based on your quiz performance.
+A 100% offline, browser-based quiz generator that turns your study documents into interactive quizzes. Upload a file, configure your session, and start practising — no server, no API keys, no data ever leaving your machine.
 
 ---
 
-## 🛠️ Technology Stack
+## Features
 
-- **Frontend**: React 18 + Vite
-- **Parsing Engines**: 
-  - `PDF.js` for robust PDF text extraction.
-  - `JSZip` for parsing PowerPoint XML structures.
-- **Styling**: Pure CSS with a Brutalist philosophy (thick 2px/4px borders, zero radius, heavy Inter/Space Grotesk typography).
-- **No API Required**: Zero dependencies on external AI providers (Anthropic/OpenAI), ensuring a completely free and private experience.
-
----
-
-## 🚀 Getting Started
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   ```
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
-4. **Upload a file** and start your session!
+- **Multi-format document support** — PDF, PPTX (PowerPoint), DOCX (Word), and plain text files.
+- **OCR for scanned / handwritten PDFs** — Powered by Tesseract.js with multi-strategy image preprocessing (grayscale, high-contrast, adaptive threshold) and a built-in spell-correction engine tuned for common OCR mis-reads.
+- **Five question types**
+  - Multiple Choice (MCQ)
+  - True / False
+  - Fill-in-the-Blank
+  - Short Answer
+  - Diagram (drag-and-drop label matching)
+- **Diagram extraction** — Automatically pulls images from PDFs and scans them for labels to create interactive diagram questions.
+- **Configurable quizzes** — Choose question count, difficulty level, quiz mode, and which question types to include.
+- **Performance analytics** — Session summary with score, time tracking, topic heatmaps, and a generated study plan.
+- **Brutalist design** — High-contrast black-and-white UI built for focus (Inter + Space Grotesk typography, hard shadows, zero border-radius).
 
 ---
 
-## 🛡️ Privacy & Security
+## Tech Stack
 
-PrepAI is designed with **Privacy-by-Design**. Since all processing occurs client-side:
-- Your documents are never uploaded.
-- Your quiz results are never tracked.
-- No API keys are needed.
+| Layer | Technology |
+|---|---|
+| Framework | React 19 + Vite |
+| PDF parsing | PDF.js |
+| PPTX parsing | JSZip |
+| DOCX parsing | Mammoth.js |
+| OCR | Tesseract.js |
+| Styling | Vanilla CSS (Brutalist system) |
+
+All libraries are loaded from CDN at runtime — the only npm dependencies are React and Vite.
 
 ---
 
-**RawPrep — Prepare smarter, locally.**
+## Getting Started
+
+```bash
+# 1. Clone the repo
+git clone <repository-url>
+cd QuizApp
+
+# 2. Install dependencies
+npm install
+
+# 3. Start the dev server
+npm run dev
+```
+
+Open the URL printed in your terminal (usually `http://localhost:5173`), upload a document, and start your quiz.
+
+### Production build
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## Project Structure
+
+```
+QuizApp/
+├── index.html          # Entry HTML
+├── package.json
+├── vite.config.js
+└── src/
+    ├── main.jsx        # React mount point
+    ├── App.jsx         # Entire application (single-file component)
+    ├── App.css
+    └── index.css
+```
+
+The app is intentionally kept as a single large component (`App.jsx`) for portability — no routing, no external state management.
+
+---
+
+## How It Works
+
+1. **Upload** — Drop a PDF, PPTX, DOCX, or TXT file.
+2. **Extract** — The app parses text client-side. Scanned PDFs trigger OCR automatically when digital text is sparse.
+3. **Generate** — Questions are generated locally by analysing sentences, extracting key terms, and building plausible distractors — no LLM required.
+4. **Quiz** — Answer questions one at a time with instant feedback.
+5. **Review** — See your score, time spent, and a personalised study plan.
+
+---
+
+## Privacy
+
+Everything runs in your browser. Documents are never uploaded to any server, quiz results are never tracked, and no API keys are needed.
+
+---
+
+## License
+
+This project is provided as-is for personal and educational use.
